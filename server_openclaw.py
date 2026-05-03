@@ -129,18 +129,23 @@ async def get_stats():
         return {"active_sessions": len(conversation_history), "sessions": list(conversation_history.keys())}
 
 # Custom chat route with no-cache headers (fixes DingTalk browser caching)
+@app.get("/", response_class=HTMLResponse)
+async def chat_root():
+    """Root route - redirect to chat"""
+    return RedirectResponse(url="/chat/")
+
 @app.get("/chat/", response_class=HTMLResponse)
 async def chat_index():
     with open("static/index.html", "r", encoding="utf-8") as f:
         html = f.read()
-    return HTMLResponse(content=html, headers={
+    return HTMLResponse(content=html, media_type="text/html; charset=utf-8", headers={
         "Cache-Control": "no-cache, no-store, must-revalidate",
         "Pragma": "no-cache",
         "Expires": "0"
     })
 
-# Serve other static files (js, css, png, etc)
-app.mount("/chat", StaticFiles(directory="static", html=False), name="static")
+# Serve static files
+app.mount("/static", StaticFiles(directory="static", html=False), name="static")
 
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
 
@@ -1078,6 +1083,23 @@ async def risk_assessment(
                 s, p = parts[0].strip(), parts[1].strip()
                 if s and len(s) >= 2:
                     items.append({"school": s, "pro": p})
+    elif file_ext in ("xlsx", "xls"):
+        # Parse Excel
+        try:
+            import openpyxl
+            from io import BytesIO
+            wb = openpyxl.load_workbook(BytesIO(file_bytes))
+            ws = wb.active
+            for row in ws.iter_rows(min_row=1, values_only=True):
+                if not row or not row[0]: continue
+                school = str(row[0]).strip() if row[0] else ""
+                # Skip header rows
+                if school in ("序号", "院校", "院校名称", "学校", "专业", "专业名称", "school"): continue
+                if len(school) < 2: continue
+                pro = str(row[1]).strip() if len(row) > 1 and row[1] else ""
+                items.append({"school": school, "pro": pro})
+        except Exception as e:
+            print(f"Excel parse error: {e}", flush=True)
     elif file_ext in ("jpg", "jpeg", "png", "gif", "webp", "bmp"):
         import base64
         b64 = base64.b64encode(file_bytes).decode()
@@ -1098,7 +1120,7 @@ async def risk_assessment(
             except: pass
 
     if not items:
-        return {"success": False, "answer": "未能从上传的文件中识别出院校和专业信息。请确认：1) 文件内容包含院校和专业名称 2) 图片清晰不模糊。支持格式：CSV/TXT/Excel。", "data": [], "display": None}
+        return {"success": False, "answer": "未能从上传的文件中识别出院校和专业信息。请确认：1) 文件内容包含院校和专业名称 2) 图片清晰不模糊。支持格式：CSV/TXT/Excel（.xlsx/.xls）。", "data": [], "display": None}
 
     # Query database
     prov_map = {"辽宁":"ln","山东":"sd","四川":"sc","河南":"hen","广东":"gd","江苏":"js","浙江":"zj","湖北":"hub","湖南":"hun","河北":"heb","安徽":"ah","福建":"fj","江西":"jx","山西":"sx","陕西":"shx","甘肃":"gs","吉林":"jl","黑龙江":"hlj","北京":"bj","上海":"sh","天津":"tj","重庆":"cq","广西":"gx","云南":"yn","贵州":"gz","内蒙古":"nmg","宁夏":"nx","青海":"qh","新疆":"xj","西藏":"xz","海南":"han"}
