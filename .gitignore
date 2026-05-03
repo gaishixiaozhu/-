@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+venv/
+.env
+
+# Node / Capacitor
+node_modules/
+app-build/android/app/build/
+app-build/android/.gradle/
+app-build/android/capacitor-cordova-android-plugins/
+app-build/android/capacitor.settings.gradle
+*.log
+
+# macOS
+.DS_Store
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# APK build outputs
+app-build/android/app/build/outputs/apk/

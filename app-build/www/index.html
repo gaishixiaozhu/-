@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#1a1a2e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="蜻蜓龙虾助手">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icon-192.png">
+<title>蜻蜓龙虾助手</title>
+<style>
+:root {
+  --bg: #1a1a2e; --sidebar-bg: #16162a; --card-bg: #1e1e36;
+  --text: #e0e0e0; --sub: #999; --accent: #ff6b35; --accent2: #f7931e;
+  --border: #2a2a45; --hover: #252545; --input-bg: #12122a;
+  --user-msg: #2d4b6e; --ai-msg: #1e1e36; --radius: 12px;
+  --green: #4caf50; --red: #ff5252; --yellow: #ffc107; --blue: #4a90d9;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif; background:var(--bg); color:var(--text); height:100vh; overflow:hidden; }
+#launcher { position:fixed; right:20px; bottom:50%; transform:translateY(50%); width:56px; height:56px; border-radius:50%; background:linear-gradient(135deg,var(--accent),var(--accent2)); box-shadow:0 4px 20px rgba(255,107,53,0.4); cursor:pointer; z-index:9998; display:flex; align-items:center; justify-content:center; transition:all 0.3s; border:none; color:white; font-size:28px; }
+#launcher:hover { transform:translateY(50%) scale(1.08); }
+#launcher.hidden { opacity:0; pointer-events:none; }
+#panel { position:fixed; top:0; right:0; width:0; height:100vh; background:var(--bg); z-index:9999; display:flex; flex-direction:column; transition:width 0.35s cubic-bezier(0.4,0,0.2,1); box-shadow:-8px 0 40px rgba(0,0,0,0.5); overflow:hidden; border-left:1px solid var(--border); }
+#panel.open { width:clamp(400px, 40vw, 800px); }
+#header { display:flex; align-items:center; justify-content:space-between; padding:12px 16px; border-bottom:1px solid var(--border); background:var(--sidebar-bg); flex-shrink:0; }
+#header .title { font-size:15px; font-weight:700; background:linear-gradient(135deg,var(--accent),var(--accent2)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+#header .actions { display:flex; gap:4px; }
+#install-btn { display:none; background:linear-gradient(135deg,var(--green),#2e7d32); border:none; color:white; cursor:pointer; font-size:12px; padding:4px 10px; border-radius:6px; align-items:center; gap:4px; }
+#install-btn.show { display:inline-flex; }
+#header button { background:none; border:none; color:var(--sub); cursor:pointer; font-size:16px; padding:4px 8px; border-radius:6px; transition:all 0.2s; }
+#header button:hover { background:var(--hover); color:var(--text); }
+#main { display:flex; flex:1; overflow:hidden; }
+#sidebar { width:220px; flex-shrink:0; background:var(--sidebar-bg); border-right:1px solid var(--border); display:flex; flex-direction:column; overflow:hidden; transition:width 0.2s; }
+#sidebar.collapsed { width:0; }
+#sidebar-header { padding:12px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; }
+#sidebar-header span { font-size:11px; color:var(--sub); font-weight:600; text-transform:uppercase; letter-spacing:1px; }
+#sidebar-header button { background:none; border:none; color:var(--red); cursor:pointer; font-size:11px; }
+#chat-list { flex:1; overflow-y:auto; padding:8px; }
+.chat-item { padding:10px 12px; border-radius:8px; cursor:pointer; margin-bottom:4px; font-size:13px; color:var(--sub); transition:all 0.15s; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.chat-item:hover { background:var(--hover); color:var(--text); }
+.chat-item.active { background:var(--accent); color:white; font-weight:600; }
+#new-chat-btn { margin:8px; padding:8px; border-radius:8px; background:var(--hover); border:1px dashed var(--border); color:var(--sub); cursor:pointer; font-size:13px; text-align:center; transition:all 0.2s; }
+#new-chat-btn:hover { border-color:var(--accent); color:var(--accent); }
+#chat-area { flex:1; display:flex; flex-direction:column; min-width:0; }
+#messages { flex:1; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:10px; }
+.message { display:flex; gap:8px; max-width:92%; animation:fadeIn 0.3s; position:relative; }
+@keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+.message.user { align-self:flex-end; flex-direction:row-reverse; }
+.message.assistant { align-self:flex-start; }
+.message .avatar { width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:13px; flex-shrink:0; }
+.message.user .avatar { background:linear-gradient(135deg,var(--accent),var(--accent2)); }
+.message.assistant .avatar { background:linear-gradient(135deg,#4a90d9,#357abd); }
+.message .bubble-wrapper { display:flex; flex-direction:column; gap:2px; max-width:100%; }
+.message .bubble { padding:10px 14px; border-radius:var(--radius); font-size:13px; line-height:1.65; word-break:break-word; }
+.message.user .bubble { background:var(--user-msg); border-bottom-right-radius:4px; }
+.message.assistant .bubble { background:var(--ai-msg); border-bottom-left-radius:4px; border:1px solid var(--border); }
+.msg-actions { display:flex; gap:4px; opacity:0; transition:opacity 0.2s; align-self:flex-start; margin-top:2px; flex-wrap:wrap; }
+.message:hover .msg-actions { opacity:1; }
+.msg-actions button { background:var(--hover); border:1px solid var(--border); color:var(--sub); cursor:pointer; font-size:11px; padding:3px 8px; border-radius:4px; transition:all 0.15s; white-space:nowrap; }
+.msg-actions button:hover { background:var(--accent); color:white; border-color:var(--accent); }
+.msg-actions button.export-btn { background:rgba(76,175,80,0.15); border-color:var(--green); color:var(--green); }
+.msg-actions button.export-btn:hover { background:var(--green); color:white; }
+/* 表格增强 */
+.bubble { overflow:hidden; }
+.bubble .table-wrapper { overflow-x:auto; margin:10px 0; border-radius:8px; border:1px solid var(--border); max-height:420px; overflow-y:auto; -webkit-overflow-scrolling:touch; }
+.bubble table { width:100%; border-collapse:collapse; font-size:11px; line-height:1.4; table-layout:auto; }
+.bubble thead { position:sticky; top:0; z-index:1; }
+.bubble th { background:var(--accent); color:white; padding:7px 8px; text-align:left; font-weight:600; white-space:nowrap; position:sticky; top:0; }
+.bubble td { padding:6px 8px; border-bottom:1px solid rgba(255,255,255,0.04); word-break:break-word; vertical-align:top; }
+/* Column width classes */
+.bubble th.col-narrow, .bubble td.col-narrow { max-width:55px; white-space:nowrap; }
+.bubble th.col-name, .bubble td.col-name { min-width:80px; max-width:140px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.bubble th.col-wide, .bubble td.col-wide { min-width:100px; max-width:280px; white-space:normal; word-break:break-word; line-height:1.5; }
+.bubble th.col-normal, .bubble td.col-normal { max-width:130px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.bubble tbody tr:nth-child(even) { background:rgba(255,255,255,0.03); }
+.bubble tbody tr:hover { background:rgba(255,255,255,0.06); }
+.tag { display:inline-block; padding:1px 6px; border-radius:3px; font-size:10px; font-weight:700; }
+.tag-sprint { color:var(--red); background:rgba(255,82,82,0.15); }
+.tag-fit { color:var(--blue); background:rgba(74,144,217,0.15); }
+.tag-steady { color:var(--yellow); background:rgba(255,193,7,0.15); }
+.tag-bottom { color:var(--green); background:rgba(76,175,80,0.15); }
+.bubble code { background:rgba(255,255,255,0.08); padding:2px 5px; border-radius:3px; font-size:12px; }
+.bubble pre { background:var(--input-bg); padding:12px; border-radius:8px; overflow-x:auto; font-size:12px; margin:8px 0; }
+.bubble ul, .bubble ol { padding-left:20px; margin:4px 0; }
+.bubble li { margin:2px 0; }
+.bubble h3 { font-size:15px; margin:12px 0 6px; color:var(--accent2); }
+.bubble h4 { font-size:13px; margin:8px 0 4px; color:var(--text); }
+.bubble hr { border:none; border-top:1px solid var(--border); margin:10px 0; }
+.bubble strong { color:var(--accent2); font-weight:600; }
+.bubble em { color:var(--blue); font-style:italic; }
+.bubble p { margin:4px 0; }
+.typing { display:flex; gap:4px; padding:4px 0; }
+.typing span { width:6px; height:6px; border-radius:50%; background:var(--accent); animation:bounce 1.2s infinite; }
+.typing span:nth-child(2) { animation-delay:0.2s; }
+.typing span:nth-child(3) { animation-delay:0.4s; }
+@keyframes bounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-8px)} }
+#input-area { padding:12px 16px; border-top:1px solid var(--border); flex-shrink:0; display:flex; gap:8px; align-items:flex-end; }
+#input-box { flex:1; background:var(--input-bg); border:1px solid var(--border); border-radius:var(--radius); padding:10px 14px; color:var(--text); font-size:13px; resize:none; outline:none; font-family:inherit; min-height:42px; max-height:150px; transition:border-color 0.2s; }
+#input-box:focus { border-color:var(--accent); }
+#send-btn { background:linear-gradient(135deg,var(--accent),var(--accent2)); border:none; border-radius:50%; width:38px; height:38px; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:16px; color:white; transition:all 0.2s; flex-shrink:0; }
+#send-btn:hover { transform:scale(1.05); box-shadow:0 2px 12px rgba(255,107,53,0.4); }
+#send-btn:disabled { opacity:0.4; cursor:not-allowed; transform:none; box-shadow:none; }
+.modal-overlay { position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.6); z-index:10000; display:flex; align-items:center; justify-content:center; }
+.modal { background:var(--card-bg); border-radius:16px; padding:24px; width:460px; max-width:90vw; border:1px solid var(--border); box-shadow:0 20px 60px rgba(0,0,0,0.5); max-height:90vh; overflow-y:auto; }
+.modal h3 { margin-bottom:16px; font-size:17px; color:var(--accent); }
+.modal label { display:block; font-size:12px; color:var(--sub); margin-bottom:4px; margin-top:10px; }
+.modal input, .modal select { width:100%; padding:9px 12px; border-radius:8px; border:1px solid var(--border); background:var(--input-bg); color:var(--text); font-size:13px; outline:none; }
+.modal input:focus, .modal select:focus { border-color:var(--accent); }
+.modal select option { background:var(--bg); color:var(--text); }
+.modal .hint { font-size:11px; color:var(--sub); margin-top:3px; }
+.modal .btn-row { display:flex; gap:8px; margin-top:20px; justify-content:flex-end; }
+.modal .btn { padding:8px 18px; border-radius:8px; border:none; cursor:pointer; font-size:13px; font-weight:600; }
+.modal .btn-primary { background:var(--accent); color:white; }
+.modal .btn-secondary { background:var(--hover); color:var(--text); }
+#toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:var(--card-bg); color:var(--text); padding:10px 20px; border-radius:8px; font-size:13px; z-index:10001; box-shadow:0 4px 16px rgba(0,0,0,0.4); border:1px solid var(--border); animation:slideUp 0.3s; }
+@keyframes slideUp { from{opacity:0;transform:translateX(-50%) translateY(20px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
+::-webkit-scrollbar { width:4px; height:4px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
+@media (max-width:600px) { #panel.open { width:100vw; } #sidebar { width:180px; } }
+</style>
+</head>
+<body>
+<button id="launcher" title="蜻蜓龙虾助手">🦞</button>
+<div id="panel">
+  <div id="header">
+    <span class="title">🦞 蜻蜓龙虾助手</span>
+    <div class="actions">
+      <button id="install-btn" onclick="installPWA()" title="安装到桌面">📲 安装应用</button>
+      <button id="toggle-sidebar-btn" title="侧边栏">☰</button>
+      <button id="settings-btn" title="设置">⚙</button>
+      <button id="close-btn" title="关闭">✕</button>
+    </div>
+  </div>
+  <div id="main">
+    <div id="sidebar">
+      <div id="sidebar-header"><span>历史对话</span><button id="clear-history-btn">清空</button></div>
+      <div id="chat-list"></div>
+      <div id="new-chat-btn">＋ 新对话</div>
+    </div>
+    <div id="chat-area">
+      <div id="messages"></div>
+      <div id="input-area">
+        <textarea id="input-box" placeholder="输入省份+选科+分数，如：辽宁物理类520分推荐..." rows="1"></textarea>
+        <button id="send-btn" title="发送">➤</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+/* ==================== 状态管理 ==================== */
+const STORE='qingting_chat_state';
+function loadState(){ try{ const r=localStorage.getItem(STORE); if(r) return JSON.parse(r); }catch(e){} return {apiKey:'',userName:'',chats:[],activeChatId:null,sidebarOpen:true}; }
+let state=loadState();
+function save(){ localStorage.setItem(STORE,JSON.stringify(state)); }
+
+const $=id=>document.getElementById(id);
+const launcher=$('launcher'),panel=$('panel'),closeBtn=$('close-btn'),toggleSidebarBtn=$('toggle-sidebar-btn'),sidebar=$('sidebar'),chatList=$('chat-list'),messagesDiv=$('messages'),inputBox=$('input-box'),sendBtn=$('send-btn'),newChatBtn=$('new-chat-btn'),settingsBtn=$('settings-btn'),clearHistoryBtn=$('clear-history-btn');
+const API='https://ocs.qingtingai.pro';
+
+/* 志愿模式映射 */
+const PS=['ln','sd','heb','zj','gz','qh'];
+const GP=['bj','tj','sh','js','ah','fj','jx','hen','hub','hun','gd','gx','han','cq','sc','yn','sx','shx','gs','jl','hlj','nmg','nx'];
+const PM={'辽宁':'ln','山东':'sd','河北':'heb','浙江':'zj','贵州':'gz','青海':'qh','北京':'bj','天津':'tj','上海':'sh','江苏':'js','安徽':'ah','福建':'fj','江西':'jx','河南':'hen','湖北':'hub','湖南':'hun','广东':'gd','广西':'gx','海南':'han','重庆':'cq','四川':'sc','云南':'yn','山西':'sx','陕西':'shx','甘肃':'gs','吉林':'jl','黑龙江':'hlj','内蒙古':'nmg','宁夏':'nx','新疆':'xj','西藏':'xz'};
+const CNT={ln:112,sd:96,heb:96,zj:80,gz:96,qh:96,bj:30,tj:45,sh:24,js:40,ah:45,fj:40,jx:45,hen:48,hub:45,hun:45,gd:45,gx:40,han:30,cq:96,sc:45,yn:40,sx:45,shx:45,gs:45,jl:40,hlj:40,nmg:45,nx:45,xj:10,xz:10};
+function getMode(p){ const c=PM[p]||''; if(PS.includes(c)) return 'ps'; if(GP.includes(c)) return 'gp'; return 'old'; }
+
+async function callAPI(q,sid){
+  const h={'Content-Type':'application/json'};
+  if(state.apiKey) h['X-API-Key']=state.apiKey;
+  const r=await fetch(API+'/api/v1/chat',{method:'POST',headers:h,body:JSON.stringify({user_id:'web_'+(state.userName||'anonymous'),session_id:sid||'',question:q})});
+  if(!r.ok){ if(r.status===401) throw new Error('API Key无效，请在设置中配置'); throw new Error('服务器错误('+r.status+')'); }
+  return r.json();
+}
+
+function renderMD(t){
+  if(!t) return '';
+  let h=t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  h=h.replace(/```(\w*)\n([\s\S]*?)```/g,'<pre><code>$2</code></pre>');
+  h=h.replace(/`([^`]+)`/g,'<code>$1</code>');
+  h=h.replace(/\*\*\*(.+?)\*\*\*/g,'<strong><em>$1</em></strong>');
+  h=h.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+  h=h.replace(/\*(.+?)\*/g,'<em>$1</em>');
+  h=h.replace(/^#### (.+)$/gm,'<h4>$1</h4>');
+  h=h.replace(/^### (.+)$/gm,'<h3>$1</h3>');
+  h=h.replace(/^---$/gm,'<hr>');
+  h=h.replace(/((?:^\|.+\|\n)+)/gm,function(m){
+    const ls=m.trim().split('\n').filter(l=>l.includes('|'));
+    if(ls.length<2) return m;
+    const sep=ls[1]&&/^\|[-: |]+\|$/.test(ls[1]);
+    let hd,bd;
+    if(sep){ hd=ls[0]; bd=ls.slice(2); }
+    else { return '<div class="table-wrapper"><table><tbody>'+ls.map(r=>{ const c=r.split('|').filter(x=>x.trim()).map(x=>'<td>'+x.trim()+'</td>').join(''); return '<tr>'+c+'</tr>'; }).join('')+'</tbody></table></div>'; }
+    const pr=r=>r.split('|').filter(x=>x.trim()).map(x=>x.trim());
+    const hcells=pr(hd);
+    // Detect column types from headers
+    const colClasses=hcells.map(h=>{
+      const t=String(h).replace(/<[^>]+>/g,'').trim();
+      if(/风险|分析|备注|建议|说明|描述|评价/.test(t)) return 'col-wide';
+      if(/序号|排名|位次|年份|代码|编码/.test(t)) return 'col-narrow';
+      if(/院校|学校|专业|名称/.test(t)) return 'col-name';
+      return 'col-normal';
+    });
+    const hc=hcells.map((c,i)=>'<th class="'+colClasses[i]+'">'+c+'</th>').join('');
+    const thead='<thead><tr>'+hc+'</tr></thead>';
+    const tbody='<tbody>'+bd.filter(l=>l.trim()).map(r=>{ let cs=pr(r).map((c,i)=>{ const x=c.replace(/<strong>|<\/strong>|<em>|<\/em>/g,'').trim(); let tg=''; if(/冲刺|极危/.test(x)) tg='tag-sprint'; else if(/适合|推荐/.test(x)) tg='tag-fit'; else if(/稳妥/.test(x)) tg='tag-steady'; else if(/托底|保底/.test(x)) tg='tag-bottom'; const cls=colClasses[i]||'col-normal'; if(tg) return '<td class="'+cls+'"><span class="tag '+tg+'">'+x+'</span></td>'; return '<td class="'+cls+'">'+c+'</td>'; }).join(''); return '<tr>'+cs+'</tr>'; }).join('')+'</tbody>';
+    return '<div class="table-wrapper"><table>'+thead+tbody+'</table></div>';
+  });
+  h=h.replace(/^- (.+)$/gm,'<li>$1</li>');
+  h=h.replace(/^\d+\. (.+)$/gm,'<li>$1</li>');
+  h=h.replace(/((?:<li>.*?<\/li>\n?)+)/g,'<ul>$1</ul>');
+  h=h.replace(/(\d{2,}[,，]?\d*)\s*(分|名|位|人|元|万|%|个)/g,'<strong style="color:var(--accent)">$1$2</strong>');
+  h='<p>'+h.replace(/\n\n/g,'</p><p>').replace(/\n/g,'<br>')+'</p>';
+  h=h.replace(/<p>\s*<\/p>/g,'');
+  h=h.replace(/<p>(<div|<table|<ul|<ol|<h[34]|<hr|<pre)/g,'$1');
+  h=h.replace(/(<\/div>|<\/table>|<\/ul>|<\/ol>|<\/h[34]>|<\/pre>)<\/p>/g,'$1');
+  return h;
+}
+function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function renderMsgs(chat){
+  if(!chat) return;
+  messagesDiv.innerHTML=chat.messages.map((m,i)=>{
+    const av=m.role==='user'?(state.userName?.[0]||'👤'):'🦞';
+    const ct=m.role==='assistant'?renderMD(m.content):esc(m.content);
+    const hasD=m._rawData&&Array.isArray(m._rawData)&&m._rawData.length>0;
+    const expB=m.role==='assistant'&&hasD?'<button class="export-btn" onclick="showExport('+i+')">📥 导出志愿单</button>':'';
+    return '<div class="message '+m.role+'"><div class="avatar">'+av+'</div><div class="bubble-wrapper"><div class="bubble">'+ct+'</div><div class="msg-actions"><button onclick="copyMsg('+i+')">📋 复制</button><button onclick="downloadMsg('+i+')">📥 Word</button>'+expB+'</div></div></div>';
+  }).join('');
+  messagesDiv.scrollTop=messagesDiv.scrollHeight;
+}
+
+function addMsg(role,content,raw){
+  const chat=getActiveChat();
+  if(!chat) return;
+  chat.messages.push({role,content,timestamp:Date.now(),_rawData:raw||null});
+  save(); renderMsgs(chat); renderChatList();
+}
+function getActiveChat(){ return state.activeChatId?state.chats.find(c=>c.id===state.activeChatId):null; }
+
+function copyMsg(i){
+  const c=getActiveChat();
+  if(!c||!c.messages[i]) return;
+  navigator.clipboard.writeText(c.messages[i].content).then(()=>toast('已复制 ✓')).catch(()=>toast('复制失败'));
+}
+function downloadMsg(i){
+  const c=getActiveChat();
+  if(!c||!c.messages[i]){ toast('暂无内容'); return; }
+  const m=c.messages[i];
+  let h='<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="UTF-8"><style>body{font-family:"Microsoft YaHei";font-size:12pt;line-height:1.8;color:#333;max-width:800px;margin:40px auto}h1{text-align:center;color:#ff6b35;border-bottom:2px solid #ff6b35;padding-bottom:10px}.msg{margin:16px 0;padding:12px 16px;border-radius:8px;background:#fff3e0}table{width:100%;border-collapse:collapse;margin:8px 0;font-size:10pt}th{background:#ff6b35;color:white;padding:6px 8px;text-align:left}td{border-bottom:1px solid #ddd;padding:5px 8px}.tag{display:inline-block;padding:2px 8px;border-radius:3px;font-weight:700}.sprint{color:#d32f2f;background:#ffebee}.fit{color:#1976d2;background:#e3f2fd}.steady{color:#f57c00;background:#fff3e0}.bottom{color:#388e3c;background:#e8f5e9}</style></head><body><h1>🦞 对话记录</h1>';
+  let ct=m.role==='assistant'?renderMD(m.content):esc(m.content);
+  ct=ct.replace(/tag-sprint/g,'tag sprint').replace(/tag-fit/g,'tag fit').replace(/tag-steady/g,'tag steady').replace(/tag-bottom/g,'tag bottom');
+  h+='<div class="msg">'+ct+'</div></body></html>';
+  const b=new Blob(['\ufeff'+h],{type:'application/msword;charset=UTF-8'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='对话_'+new Date().toISOString().slice(0,10)+'.doc';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a); toast('Word已下载 ✓');
+}
+
+/* ===== 导出志愿单 ===== */
+function showExport(i){
+  const c=getActiveChat();
+  if(!c||!c.messages[i]){ toast('暂无数据'); return; }
+  const m=c.messages[i];
+  const data=m._rawData;
+  if(!data||!Array.isArray(data)||data.length===0){ toast('该消息无可导出的志愿数据'); return; }
+
+  const prov=detectProv(m.content);
+  const mode=getMode(prov);
+  const maxSlot=CNT[PM[prov]]||45;
+  const modeName=mode==='ps'?'专业+院校':mode==='gp'?'院校专业组':'老高考';
+
+  let pv='<div style="font-size:12px;color:var(--sub);margin-bottom:12px">';
+  pv+='省份: <b style="color:var(--accent)">'+(prov||'未识别')+'</b> | ';
+  pv+='模式: <b style="color:var(--accent2)">'+modeName+'</b> | ';
+  pv+='志愿槽: <b>'+maxSlot+'</b> | ';
+  pv+='可导出: <b style="color:var(--green)">'+data.length+'条</b></div>';
+
+  pv+='<div style="max-height:180px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;margin-bottom:12px"><table style="width:100%;font-size:11px;border-collapse:collapse"><thead><tr style="background:var(--accent);color:white"><th style="padding:5px 8px">#</th><th style="padding:5px 8px">院校</th><th style="padding:5px 8px">专业</th>';
+  if(mode==='gp') pv+='<th style="padding:5px 8px">专业组</th>';
+  pv+='<th style="padding:5px 8px">代码</th></tr></thead><tbody>';
+  for(let j=0;j<Math.min(data.length,8);j++){
+    const r=data[j];
+    pv+='<tr style="border-bottom:1px solid rgba(255,255,255,0.04)"><td style="padding:4px 8px">'+(j+1)+'</td><td style="padding:4px 8px">'+(r.school||'')+'</td><td style="padding:4px 8px">'+(r.pro||'')+'</td>';
+    if(mode==='gp') pv+='<td style="padding:4px 8px">'+(r.pro_group||'')+'</td>';
+    pv+='<td style="padding:4px 8px">'+(r.school_code||'')+'-'+(r.pro_code||'')+'</td></tr>';
+  }
+  if(data.length>8) pv+='<tr><td colspan="'+(mode==='gp'?5:4)+'" style="padding:6px;text-align:center;color:var(--sub)">... 共'+data.length+'条</td></tr>';
+  pv+='</tbody></table></div>';
+
+  const ov=document.createElement('div'); ov.className='modal-overlay';
+  ov.innerHTML='<div class="modal"><h3>📥 导出志愿单</h3>'+pv+'<div class="btn-row"><button class="btn btn-secondary" id="ec">取消</button><button class="btn btn-primary" id="ex">导出 Excel (.xls)</button></div></div>';
+  document.body.appendChild(ov);
+  ov.querySelector('#ec').onclick=()=>ov.remove();
+  ov.querySelector('#ex').onclick=()=>{ doExport(data,prov,mode,maxSlot); ov.remove(); };
+  ov.addEventListener('click',e=>{ if(e.target===ov) ov.remove(); });
+}
+
+function detectProv(t){
+  const ps=['辽宁','山东','河北','浙江','贵州','青海','北京','天津','上海','江苏','安徽','福建','江西','河南','湖北','湖南','广东','广西','海南','重庆','四川','云南','山西','陕西','甘肃','吉林','黑龙江','内蒙古','宁夏','新疆','西藏'];
+  for(const p of ps){ if(t.includes(p)) return p; }
+  return '';
+}
+
+function doExport(data,prov,mode,maxSlot){
+  let csv='\ufeff';
+  if(mode==='ps'){
+    csv+='序号,院校编码,专业编码\n';
+    for(let i=0;i<Math.min(data.length,maxSlot);i++){
+      const r=data[i];
+      csv+=(i+1).toString().padStart(2,'0')+','+(r.school_code||'')+','+(r.pro_code||'')+'\n';
+    }
+  }else if(mode==='gp'){
+    csv+='序号,专业组编码,院校编码,专业编码1,专业编码2,专业编码3,专业编码4,专业编码5,专业编码6\n';
+    // 按专业组聚合
+    const groups={};
+    for(const r of data){
+      const gk=r.pro_group||'__nogroup__';
+      if(!groups[gk]) groups[gk]={school:r.school||'',school_code:r.school_code||'',group_code:gk,pros:[]};
+      groups[gk].pros.push({name:r.pro||'',code:r.pro_code||''});
+    }
+    let seq=1;
+    for(const gk of Object.keys(groups)){
+      if(seq>maxSlot) break;
+      const g=groups[gk];
+      const codes=[];
+      for(let j=0;j<6;j++) codes.push(g.pros[j]?g.pros[j].code:'');
+      csv+=seq.toString().padStart(2,'0')+','+g.group_code+','+g.school_code+','+codes.join(',')+'\n';
+      seq++;
+    }
+  }else{
+    csv+='序号,院校编码,专业编码\n';
+    for(let i=0;i<Math.min(data.length,maxSlot);i++){
+      const r=data[i];
+      csv+=(i+1).toString().padStart(2,'0')+','+(r.school_code||'')+','+(r.pro_code||'')+'\n';
+    }
+  }
+  const b=new Blob([csv],{type:'application/vnd.ms-excel;charset=UTF-8'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(b);
+  a.download='志愿单_'+(prov||'export')+'_'+new Date().toISOString().slice(0,10)+'.xls';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  toast('志愿单已导出 ✓ ('+Math.min(data.length,maxSlot)+'条)');
+}
+
+/* ===== 聊天 ===== */
+function createChat(title){
+  const chat={id:Date.now().toString(),title:title||'新的对话',messages:[]};
+  state.chats.unshift(chat); state.activeChatId=chat.id;
+  save(); renderChatList(); renderMsgs(chat); return chat;
+}
+
+async function sendMessage(){
+  const q=inputBox.value.trim();
+  if(!q) return;
+  let chat=getActiveChat();
+  if(!chat) chat=createChat(q.substring(0,30));
+  if(chat.messages.length===0){ chat.title=q.substring(0,30)+(q.length>30?'...':''); save(); }
+  inputBox.value=''; inputBox.style.height='auto'; sendBtn.disabled=true;
+  addMsg('user',q);
+  const lid='loading_'+Date.now();
+  messagesDiv.insertAdjacentHTML('beforeend','<div id="'+lid+'" class="message assistant"><div class="avatar">🦞</div><div class="bubble"><div class="typing"><span></span><span></span><span></span></div></div></div>');
+  messagesDiv.scrollTop=messagesDiv.scrollHeight;
+  try{
+    const r=await callAPI(q,chat.id);
+    document.getElementById(lid)?.remove();
+    addMsg('assistant',r.success&&r.answer?r.answer:(r.answer||'⚠️ 未查询到相关数据'),r.data||[]);
+  }catch(e){
+    document.getElementById(lid)?.remove();
+    addMsg('assistant','❌ '+e.message);
+  }
+  sendBtn.disabled=false; inputBox.focus();
+}
+
+function renderChatList(){
+  chatList.innerHTML=state.chats.map(c=>'<div class="chat-item'+(c.id===state.activeChatId?' active':'')+'" data-id="'+c.id+'">'+esc(c.title||'无标题')+'</div>').join('');
+  chatList.querySelectorAll('.chat-item').forEach(item=>{ item.addEventListener('click',()=>{ state.activeChatId=item.dataset.id; save(); renderChatList(); renderMsgs(getActiveChat()); }); });
+}
+
+function openPanel(){ panel.classList.add('open'); launcher.classList.add('hidden'); }
+function closePanel(){ panel.classList.remove('open'); launcher.classList.remove('hidden'); }
+function toggleSidebar(){ sidebar.classList.toggle('collapsed'); state.sidebarOpen=!sidebar.classList.contains('collapsed'); save(); }
+
+function showSettings(){
+  const ov=document.createElement('div'); ov.className='modal-overlay';
+  ov.innerHTML='<div class="modal"><h3>⚙ 设置</h3><label>你的名字</label><input id="sn" type="text" placeholder="输入你的名字" value="'+esc(state.userName)+'"><label>API Key</label><input id="sk" type="password" placeholder="tk_..." value="'+esc(state.apiKey)+'"><div class="hint">首次使用需配置有效API Key</div><div class="btn-row"><button class="btn btn-secondary" id="sc">取消</button><button class="btn btn-primary" id="ss">保存</button></div></div>';
+  document.body.appendChild(ov);
+  ov.querySelector('#sc').onclick=()=>ov.remove();
+  ov.querySelector('#ss').onclick=()=>{ state.userName=ov.querySelector('#sn').value.trim(); state.apiKey=ov.querySelector('#sk').value.trim(); save(); ov.remove(); toast('设置已保存 ✓'); const chat=getActiveChat(); if(chat) renderMsgs(chat); };
+  ov.addEventListener('click',e=>{ if(e.target===ov) ov.remove(); });
+}
+
+function toast(msg){
+  const t=document.createElement('div'); t.id='toast'; t.textContent=msg; document.body.appendChild(t);
+  setTimeout(()=>t.remove(),3000);
+}
+
+launcher.addEventListener('click',openPanel);
+closeBtn.addEventListener('click',closePanel);
+toggleSidebarBtn.addEventListener('click',toggleSidebar);
+settingsBtn.addEventListener('click',showSettings);
+sendBtn.addEventListener('click',sendMessage);
+inputBox.addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); sendMessage(); } });
+inputBox.addEventListener('input',()=>{ inputBox.style.height='auto'; inputBox.style.height=Math.min(inputBox.scrollHeight,150)+'px'; });
+newChatBtn.addEventListener('click',()=>createChat('新的对话'));
+clearHistoryBtn.addEventListener('click',()=>{ if(confirm('确定清空所有历史对话？')){ state.chats=[]; state.activeChatId=null; save(); renderChatList(); messagesDiv.innerHTML=''; } });
+
+function init(){
+  renderChatList();
+  const chat=getActiveChat();
+  if(chat) renderMsgs(chat);
+  else if(state.chats.length>0){ state.activeChatId=state.chats[0].id; save(); renderChatList(); renderMsgs(state.chats[0]); }
+  if(!state.sidebarOpen) sidebar.classList.add('collapsed');
+}
+init();
+if(!state.apiKey) setTimeout(()=>showSettings(),600);
+
+/* ===== PWA Service Worker ===== */
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('/sw.js').catch(()=>{});
+}
+
+/* ===== PWA Install Prompt ===== */
+let deferredPrompt=null;
+window.addEventListener('beforeinstallprompt',(e)=>{
+  e.preventDefault();
+  deferredPrompt=e;
+  const btn=document.getElementById('install-btn');
+  if(btn) btn.style.display='inline-flex';
+});
+window.addEventListener('appinstalled',()=>{
+  deferredPrompt=null;
+  const btn=document.getElementById('install-btn');
+  if(btn) btn.style.display='none';
+});
+function installPWA(){
+  if(!deferredPrompt) return toast('安装功能不可用，请通过浏览器菜单安装');
+  deferredPrompt.prompt();
+  deferredPrompt.userChoice.then(r=>{ if(r.outcome==='accepted') toast('✅ 安装成功！'); deferredPrompt=null; });
+}
+
+/* ===== Safe Area for Notch Phones ===== */
+const sa=getComputedStyle(document.documentElement).getPropertyValue('env(safe-area-inset-top)');
+if(sa&&sa!=='0px'){
+  document.getElementById('header').style.paddingTop='calc(12px + '+sa+')';
+  document.getElementById('input-area').style.paddingBottom='calc(12px + env(safe-area-inset-bottom))';
+}
+
+</script>
+</body>
+</html>

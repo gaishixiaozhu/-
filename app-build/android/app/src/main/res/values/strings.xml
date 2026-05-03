@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">蜻蜓龙虾助手</string>
+    <string name="title_activity_main">蜻蜓龙虾助手</string>
+    <string name="package_name">ai.qingting.lobster</string>
+    <string name="custom_url_scheme">ai.qingting.lobster</string>
+</resources>

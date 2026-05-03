@@ -1,0 +1,12 @@
+{
+  "appId": "ai.qingting.lobster",
+  "appName": "蜻蜓龙虾助手",
+  "webDir": "www",
+  "server": {
+    "url": "https://ocs.qingtingai.pro/chat/",
+    "cleartext": false
+  },
+  "android": {
+    "allowMixedContent": false
+  }
+}
