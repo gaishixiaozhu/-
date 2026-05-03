@@ -953,6 +953,37 @@ async def chat(request: ChatRequest, x_api_key: Optional[str] = Header(None)):
     )
 
 
+
+
+class LLMRequest(BaseModel):
+    prompt: str
+    temperature: float = 0.7
+    max_tokens: int = 4096
+
+class LLMResponse(BaseModel):
+    success: bool
+    content: str = ""
+    error: str = ""
+
+@app.post("/api/v1/llm")
+async def llm_call(request: LLMRequest, x_api_key: Optional[str] = Header(None)):
+    """通用LLM调用端点 - 不经过意图识别，直接调LLM"""
+    if x_api_key:
+        from api_key_validator import verify_key
+        if not verify_key(x_api_key).get("valid"):
+            raise HTTPException(status_code=401, detail="API Key无效")
+    
+    if not DEEPSEEK_API_KEY:
+        return {"success": False, "content": "", "error": "服务端未配置LLM"}
+    
+    try:
+        messages = [{"role": "user", "content": request.prompt}]
+        response = call_llm(messages, temperature=request.temperature, max_retries=2)
+        return {"success": True, "content": response, "error": ""}
+    except Exception as e:
+        logger.error(f"LLM调用失败: {e}")
+        return {"success": False, "content": "", "error": str(e)}
+
 @app.post("/api/v1/chat/async")
 async def chat_async(request: ChatRequest, x_api_key: Optional[str] = Header(None)):
     """异步对话接口"""

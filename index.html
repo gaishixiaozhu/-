@@ -1322,11 +1322,14 @@ function downloadFortuneReport(result,name,birth,birthTime,gender,selectedMajors
 }
 
 function callFortuneServer(prompt){
-  return fetch(API+'/api/v1/chat',{
+  return fetch(API+'/api/v1/llm',{
     method:'POST',
     headers:{'Content-Type':'application/json','X-API-Key':state.apiKey||''},
-    body:JSON.stringify({user_id:'web_report',session_id:'report_'+Date.now(),question:prompt})
-  }).then(function(r){ return r.json(); }).then(function(d){ return d.answer||d.content||''; });
+    body:JSON.stringify({prompt:prompt,temperature:0.7,max_tokens:4096})
+  }).then(function(r){ return r.json(); }).then(function(d){
+    if(!d.success) throw new Error(d.error||'服务端LLM调用失败');
+    return d.content||'';
+  });
 }
 
 function callDeepSeekDirect(prompt,apiKey){
