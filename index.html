@@ -293,6 +293,7 @@ body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica
   </div>
 </div>
 <script>
+//<![CDATA[
 /* ==================== 状态管理 ==================== */
 const STORE='qingting_chat_state';
 function loadState(){ try{ const r=localStorage.getItem(STORE); if(r) { const s=JSON.parse(r); if(!s.sessionId) s.sessionId=Date.now().toString(); return s; } }catch(e){} return {apiKey:'',userName:'',chats:[],activeChatId:null,sidebarOpen:true,sessionId:Date.now().toString()}; }
@@ -1203,6 +1204,8 @@ function downloadFortuneReport(result,name,birth,birthTime,gender,selectedMajors
   toast('📥 报告已下载 ✓');
 }
 
+
+//]]>
 </script>
 </body>
 </html>
