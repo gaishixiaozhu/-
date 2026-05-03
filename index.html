@@ -1287,16 +1287,13 @@ function downloadFortuneReport(result,name,birth,birthTime,gender,selectedMajors
   var wuxingStr=result.wuxing.map(function(w){return w.name+w.percent+'%';}).join('、');
   var majorsStr=result.majors.slice(0,5).map(function(m){return m.name;}).join('、');
 
-  var prompt='你是一位精通周易八字命理学的专家。请根据以下考生信息，撰写一份专业的命理分析报告。\n\n考生信息：\n- 姓名：'+name+'\n- 农历生日：'+birth+'（'+birthTime+'时）\n- 性别：'+gender+'\n- 选科：'+result.subject+'\n- 八字四柱：'+baziStr+'\n- 五行分布：'+wuxingStr+'\n- 命理特质：'+result.traits.join('；')+'\n- 推荐专业方向：'+majorsStr+'\n- 五行平衡建议（需补益元素）：'+result.elementBalance.needElement+'\n\n请以JSON格式返回以下四个部分（每部分300-500字，专业深度，文笔优美，有周易智慧）：\n\n{\n  "wuxingDeep": "一、五行命理深层解读（分析八字五行旺衰、日主特性、十神关系、用神喜忌，结合周易卦象和干支生克关系）",\n  "careerAnalysis": "二、职业发展方向分析（结合五行喜用神和选科，分析考生适合的职业领域、行业方向、团队角色、领导风格，引用周易「乾卦」「坤卦」等智慧）",\n  "lifeGuidance": "三、人生发展规划建议（从学业、事业、人际、健康四个维度给出建议，结合八字大运流年趋势，引用「天行健君子以自强不息」等经典）",\n  "fortuneWisdom": "四、命理总结与周易智慧（总结考生命局核心优势，给出终身发展核心建议，引用2-3句周易原文，点明人生主题）"\n}\n\n要求：\n1. 每部分300-500字，深度专业\n2. 文笔优美流畅，有文学性\n3. 结合周易经典原文（如乾卦、坤卦、谦卦等）\n4. 不要使用Markdown格式（不要#、**等标记）\n5. 四部分之间用\\n\\n---\\n\\n分隔\n6. 直接返回纯文本，不要JSON包装，不要代码块标记';
+  var prompt='你是一位精通周易八字命理学的专家。请根据以下考生信息，撰写一份专业的命理分析报告（每部分用===分隔）：\n\n考生信息：\n- 姓名：'+name+'\n- 农历生日：'+birth+'（'+birthTime+'时）\n- 性别：'+gender+'\n- 选科：'+result.subject+'\n- 八字四柱：'+baziStr+'\n- 五行分布：'+wuxingStr+'\n- 命理特质：'+result.traits.join('；')+'\n- 推荐专业方向：'+majorsStr+'\n- 五行平衡建议（需补益元素）：'+result.elementBalance.needElement+'\n\n请以JSON格式返回以下四个部分（每部分300-500字，专业深度，文笔优美，有周易智慧）：\n\n{\n  "wuxingDeep": "一、五行命理深层解读（分析八字五行旺衰、日主特性、十神关系、用神喜忌，结合周易卦象和干支生克关系）",\n  "careerAnalysis": "二、职业发展方向分析（结合五行喜用神和选科，分析考生适合的职业领域、行业方向、团队角色、领导风格，引用周易「乾卦」「坤卦」等智慧）",\n  "lifeGuidance": "三、人生发展规划建议（从学业、事业、人际、健康四个维度给出建议，结合八字大运流年趋势，引用「天行健君子以自强不息」等经典）",\n  "fortuneWisdom": "四、命理总结与周易智慧（总结考生命局核心优势，给出终身发展核心建议，引用2-3句周易原文，点明人生主题）"\n}\n\n要求：\n1. 每部分300-500字，深度专业\n2. 文笔优美流畅，有文学性\n3. 结合周易经典原文（如乾卦、坤卦、谦卦等）\n4. 不要使用Markdown格式（不要#、**等标记）\n5. 四部分之间用\\n\\n---\\n\\n分隔\n6. 直接返回纯文本，不要JSON包装，不要代码块标记';
 
-  var dsKey=state.apiKey||'';
-  // 如果没有配置API Key，使用服务端调用
-  var useServer=!dsKey||dsKey.length<10;
-
-  (useServer?callFortuneServer(prompt):callDeepSeekDirect(prompt,dsKey)).then(function(llmText){
+  // 使用服务端 LLM 生成报告文章
+  callFortuneServer(prompt).then(function(llmText){
     loadOv.remove();
     // 解析LLM返回的四部分
-    var parts=llmText.split(/\n?\s*---\s*\n?/);
+    var parts=llmText.split(/===SECTION===/);
     var llm={
       wuxingDeep: (parts[0]||'').replace(/^.*?[：:]\s*/, '').trim(),
       careerAnalysis: (parts[1]||'').replace(/^.*?[：:]\s*/, '').trim(),
@@ -1311,6 +1308,7 @@ function downloadFortuneReport(result,name,birth,birthTime,gender,selectedMajors
 
     buildAndPrintReport(result,name,birth,birthTime,gender,selectedMajors,llm,wxColors,wxEmoji);
   }).catch(function(e){
+    console.log('Report LLM error:', e);
     loadOv.remove();
     toast('⚠️ AI报告生成失败，使用本地模板报告');
     var llm={
