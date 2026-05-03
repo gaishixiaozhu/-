@@ -119,6 +119,19 @@ body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica
 #profile-bar .pf-edit { background:none; border:none; color:var(--sub); cursor:pointer; font-size:11px; padding:2px 6px; border-radius:4px; }
 #profile-bar .pf-edit:hover { color:var(--accent); background:var(--hover); }
 #profile-bar .pf-hint { font-size:10px; color:var(--yellow); margin-left:auto; }
+/* ===== 工具栏（志愿单评估入口） ===== */
+#action-bar { padding:6px 16px; border-bottom:1px solid var(--border); background:var(--sidebar-bg); display:flex; gap:6px; align-items:center; flex-shrink:0; }
+#action-bar .act-btn { background:var(--hover); border:1px solid var(--border); color:var(--sub); cursor:pointer; font-size:11px; padding:4px 10px; border-radius:4px; transition:all 0.15s; white-space:nowrap; display:flex; align-items:center; gap:4px; }
+#action-bar .act-btn:hover { background:var(--accent); color:white; border-color:var(--accent); }
+#action-bar .act-btn.primary { background:rgba(255,107,53,0.12); border-color:rgba(255,107,53,0.3); color:var(--accent); }
+#action-bar .act-btn.primary:hover { background:var(--accent); color:white; }
+/* 上传区 */
+.upload-zone { border:2px dashed var(--border); border-radius:12px; padding:32px 16px; text-align:center; cursor:pointer; transition:all 0.2s; margin:12px 0; }
+.upload-zone:hover, .upload-zone.dragover { border-color:var(--accent); background:rgba(255,107,53,0.05); }
+.upload-zone .upload-icon { font-size:32px; margin-bottom:8px; }
+.upload-zone .upload-text { font-size:12px; color:var(--sub); }
+.upload-zone .upload-hint { font-size:10px; color:var(--border); margin-top:4px; }
+#upload-preview { max-height:200px; overflow-y:auto; margin:10px 0; }
 #input-area { padding:12px 16px; border-top:1px solid var(--border); flex-shrink:0; display:flex; gap:8px; align-items:flex-end; }
 #input-box { flex:1; background:var(--input-bg); border:1px solid var(--border); border-radius:var(--radius); padding:10px 14px; color:var(--text); font-size:13px; resize:none; outline:none; font-family:inherit; min-height:42px; max-height:150px; transition:border-color 0.2s; }
 #input-box:focus { border-color:var(--accent); }
@@ -163,6 +176,10 @@ body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica
     <div class="pf-group" id="pf-subject"><select id="pf-subject-sel"><option value="">选科</option><option value="物理">首选科目物理</option><option value="历史">首选科目历史</option><option value="文科">文科</option><option value="理科">理科</option></select></div>
     <div class="pf-group" id="pf-score"><input type="number" id="pf-score-lo" class="pf-score" placeholder="最低分" min="0" max="900"><span class="pf-dash">~</span><input type="number" id="pf-score-hi" class="pf-score" placeholder="最高分" min="0" max="900"></div>
     <span class="pf-hint" id="pf-hint" style="display:none">⚠ 请填写考生信息</span>
+  </div>
+  <div id="action-bar">
+    <button class="act-btn primary" id="risk-assess-btn">🔍 志愿单风险评估</button>
+    <span style="font-size:10px;color:var(--sub);margin-left:4px">上传志愿表图片或文件，自动识别并评估风险</span>
   </div>
   <div id="main">
     <div id="sidebar">
@@ -696,6 +713,100 @@ if(sa&&sa!=='0px'){
   document.getElementById('header').style.paddingTop='calc(12px + '+sa+')';
   document.getElementById('input-area').style.paddingBottom='calc(12px + env(safe-area-inset-bottom))';
 }
+
+/* ==================== 志愿单风险评估 ==================== */
+
+/* ==================== 志愿单风险评估 ==================== */
+function showRiskAssessment(){
+  var prov=profile.province||'';
+  var scoreLo=profile.scoreLo||'';
+  var scoreHi=profile.scoreHi||'';
+  if(!prov||!scoreLo){ toast('请先在考生信息栏填写省份和分数'); return; }
+  
+  var ov=document.createElement('div');
+  ov.className='modal-overlay';
+  ov.id='risk-modal';
+  var h='<div class="modal" style="max-width:500px"><h3>🔍 志愿单风险评估</h3>';
+  h+='<div style="font-size:12px;color:var(--sub);margin-bottom:8px">考生: '+esc(prov)+' | '+esc(profile.subject||'')+' | '+esc(scoreLo)+(scoreHi?'~'+esc(scoreHi):'')+'分</div>';
+  h+='<div class="upload-zone" id="upload-zone">';
+  h+='<div class="upload-icon">📤</div>';
+  h+='<div class="upload-text">点击上传志愿表图片或文件</div>';
+  h+='<div class="upload-hint">支持 JPG/PNG 图片 · 文件大小不超过10MB</div>';
+  h+='<input type="file" id="upload-input" accept="image/*,.xlsx,.csv,.txt" style="display:none">';
+  h+='</div>';
+  h+='<div id="upload-preview" style="display:none"></div>';
+  h+='<div id="upload-status" style="font-size:11px;color:var(--sub);margin-top:6px"></div>';
+  h+='<div class="btn-row">';
+  h+='<button class="btn btn-secondary" id="risk-cancel">取消</button>';
+  h+='<button class="btn btn-primary" id="risk-start" disabled>🔍 开始评估</button>';
+  h+='</div></div>';
+  ov.innerHTML=h;
+  document.body.appendChild(ov);
+  
+  var uploadedFile=null;
+  
+  document.getElementById('upload-zone').onclick=function(){ document.getElementById('upload-input').click(); };
+  document.getElementById('upload-zone').ondragover=function(e){ e.preventDefault(); this.classList.add('dragover'); };
+  document.getElementById('upload-zone').ondragleave=function(){ this.classList.remove('dragover'); };
+  document.getElementById('upload-zone').ondrop=function(e){ e.preventDefault(); this.classList.remove('dragover'); handleFile(e.dataTransfer.files[0]); };
+  
+  document.getElementById('upload-input').onchange=function(){ if(this.files[0]) handleFile(this.files[0]); };
+  
+  function handleFile(file){
+    if(!file) return;
+    if(file.size>10*1024*1024){ toast('文件大小不能超过10MB'); return; }
+    uploadedFile=file;
+    var preview=document.getElementById('upload-preview');
+    preview.style.display='block';
+    if(file.type.startsWith('image/')){
+      var reader=new FileReader();
+      reader.onload=function(e){
+        preview.innerHTML='<img src="'+e.target.result+'" style="max-width:100%;max-height:160px;border-radius:8px;border:1px solid var(--border)"><div style="font-size:11px;color:var(--green);margin-top:4px">✅ '+esc(file.name)+' ('+(file.size/1024).toFixed(0)+'KB)</div>';
+      };
+      reader.readAsDataURL(file);
+    }else{
+      preview.innerHTML='<div style="font-size:12px;color:var(--green)">✅ '+esc(file.name)+' ('+(file.size/1024).toFixed(0)+'KB) 已选择</div>';
+    }
+    document.getElementById('upload-status').textContent='';
+    document.getElementById('risk-start').disabled=false;
+  }
+  
+  document.getElementById('risk-cancel').onclick=function(){ ov.remove(); };
+  document.getElementById('risk-start').onclick=function(){ runRiskAssessment(uploadedFile,prov,profile.subject||'',scoreLo,scoreHi,ov); };
+  ov.addEventListener('click',function(e){ if(e.target===ov) ov.remove(); });
+}
+
+async function runRiskAssessment(file,prov,subject,scoreLo,scoreHi,ov){
+  var statusEl=document.getElementById('upload-status');
+  var startBtn=document.getElementById('risk-start');
+  startBtn.disabled=true; startBtn.textContent='⏳ 分析中...';
+  statusEl.textContent='正在上传并分析志愿单...';
+  
+  try{
+    var formData=new FormData();
+    formData.append('file',file);
+    formData.append('province',prov);
+    formData.append('subject',subject);
+    formData.append('score_lo',scoreLo);
+    formData.append('score_hi',scoreHi||scoreLo);
+    
+    var r=await fetch(API+'/api/v1/risk-assessment',{
+      method:'POST',
+      headers:{'X-API-Key':state.apiKey},
+      body:formData
+    });
+    if(!r.ok){ var err=await r.json().catch(function(){return {};}); throw new Error(err.detail||'服务器错误('+r.status+')'); }
+    var result=await r.json();
+    ov.remove();
+    addMsg('assistant',result.answer||'评估完成',result.data||[],result.display||null);
+    toast('✅ 评估完成');
+  }catch(e){
+    statusEl.textContent='❌ '+esc(e.message);
+    startBtn.disabled=false; startBtn.textContent='🔍 重试评估';
+  }
+}
+
+document.getElementById('risk-assess-btn').addEventListener('click',showRiskAssessment);
 
 </script>
 </body>

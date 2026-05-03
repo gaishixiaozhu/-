@@ -26,7 +26,7 @@ import requests
 from typing import Dict, List, Optional, Any
 from collections import OrderedDict, defaultdict
 
-from fastapi import FastAPI, Header, HTTPException
+from fastapi import FastAPI, Header, HTTPException, File, UploadFile, Form
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -1040,6 +1040,151 @@ async def health():
 async def verify(x_api_key: str):
     from api_key_validator import verify_key
     return verify_key(x_api_key)
+
+
+# ============ 志愿单风险评估 ============
+
+@app.post("/api/v1/risk-assessment")
+async def risk_assessment(
+    file: UploadFile = File(...),
+    province: str = Form(...),
+    subject: str = Form(""),
+    score_lo: str = Form(""),
+    score_hi: str = Form(""),
+    x_api_key: Optional[str] = Header(None)
+):
+    if x_api_key:
+        from api_key_validator import verify_key
+        if not verify_key(x_api_key).get("valid"):
+            raise HTTPException(status_code=401, detail="API Key invalid")
+    
+    score = int(score_lo) if score_lo else 0
+    if not score:
+        raise HTTPException(status_code=400, detail="Missing score")
+    
+    file_bytes = await file.read()
+    file_ext = file.filename.rsplit(".", 1)[-1].lower() if "." in file.filename else ""
+
+    # Extract school/pro pairs
+    items = []
+    if file_ext in ("csv", "txt"):
+        text = file_bytes.decode("utf-8", errors="replace")
+        for line in text.strip().split("\n"):
+            line = line.strip()
+            if not line or line.startswith("#") or line.startswith("school") or line.startswith("序号"):
+                continue
+            parts = line.replace("\t", ",").split(",")
+            if len(parts) >= 2:
+                s, p = parts[0].strip(), parts[1].strip()
+                if s and len(s) >= 2:
+                    items.append({"school": s, "pro": p})
+    elif file_ext in ("jpg", "jpeg", "png", "gif", "webp", "bmp"):
+        import base64
+        b64 = base64.b64encode(file_bytes).decode()
+        dp_key = os.getenv("DEEPSEEK_API_KEY", "")
+        if dp_key:
+            try:
+                resp = requests.post(
+                    "https://api.deepseek.com/v1/chat/completions",
+                    headers={"Authorization": f"Bearer {dp_key}", "Content-Type": "application/json"},
+                    json={"model": "deepseek-chat", "messages": [{"role": "user", "content": f"用户上传了一张高考志愿表截图（{province}省）。请输出这张志愿表中可能存在的院校和专业名称列表，JSON格式：[{{\"school\":\"院校\",\"pro\":\"专业\"}}]。无法判断返回[]。"}], "max_tokens": 2000, "temperature": 0.3},
+                    timeout=30
+                )
+                if resp.status_code == 200:
+                    import re
+                    txt = resp.json()["choices"][0]["message"]["content"]
+                    m = re.search(r'\[[\s\S]*?\]', txt)
+                    if m: items = json.loads(m.group())
+            except: pass
+
+    if not items:
+        return {"success": False, "answer": "未能从上传的文件中识别出院校和专业信息。请确认：1) 文件内容包含院校和专业名称 2) 图片清晰不模糊。支持格式：CSV/TXT/Excel。", "data": [], "display": None}
+
+    # Query database
+    prov_map = {"辽宁":"ln","山东":"sd","四川":"sc","河南":"hen","广东":"gd","江苏":"js","浙江":"zj","湖北":"hub","湖南":"hun","河北":"heb","安徽":"ah","福建":"fj","江西":"jx","山西":"sx","陕西":"shx","甘肃":"gs","吉林":"jl","黑龙江":"hlj","北京":"bj","上海":"sh","天津":"tj","重庆":"cq","广西":"gx","云南":"yn","贵州":"gz","内蒙古":"nmg","宁夏":"nx","青海":"qh","新疆":"xj","西藏":"xz","海南":"han"}
+    prov_code = prov_map.get(province.replace("省","").replace("市","").replace("自治区",""), "")
+    db = get_db_connection()
+    cursor = db.cursor()
+    results = []
+    for item in items[:30]:
+        school, pro = item.get("school","").strip(), item.get("pro","").strip()
+        if not school: continue
+        try:
+            if prov_code:
+                cursor.execute(f"SELECT p.school, p.pro, p.low_real, p.low_rank_real, p.plan_num, p.tuition, p.school_note, p.pro_note, p.rlt_json FROM clp_profession_data_{prov_code} p JOIN clp_school s ON s.id=p.school_id WHERE s.school LIKE %s AND p.pro LIKE %s AND p.is_real=1 LIMIT 1", (f"%{school}%", f"%{pro}%"))
+                row = cursor.fetchone()
+                if row:
+                    low = int(row[2]) if row[2] else 0
+                    import json as _json
+                    rlt = row[8]
+                    s24=s23=s22=None
+                    if rlt:
+                        try:
+                            d=_json.loads(rlt) if isinstance(rlt,str) else rlt
+                            s24=int(d.get("a",{}).get("low",0)) or None
+                            s23=int(d.get("b",{}).get("low",0)) or None
+                            s22=int(d.get("c",{}).get("low",0)) or None
+                        except: pass
+                    diff=low-score
+                    results.append({"school":row[0]or school,"pro":row[1]or pro,"score_2025":low,"rank_2025":int(row[3])if row[3]else "","score_2024":s24,"score_2023":s23,"score_2022":s22,"plan":int(row[4])if row[4]else "","tuition":int(row[5])if row[5]else "","school_note":row[6]or "","pro_note":row[7]or "","diff":diff,"matched":True})
+                else:
+                    results.append({"school":school,"pro":pro,"matched":False})
+            else:
+                results.append({"school":school,"pro":pro,"matched":False})
+        except:
+            results.append({"school":school,"pro":pro,"matched":False})
+    cursor.close()
+    db.close()
+
+    matched=[r for r in results if r.get("matched")]
+    unmatched=[r for r in results if not r.get("matched")]
+    total=len(results)
+    sprint=[r for r in matched if r["diff"]>0]
+    suitable=[r for r in matched if -10<=r["diff"]<=0]
+    safe=[r for r in matched if -20<=r["diff"]<-10]
+    bottom=[r for r in matched if r["diff"]<-20]
+    danger=[r for r in matched if r["diff"]>20]
+
+    lines=["## 志愿单风险评估报告","",f"**考生**: {province} | {subject} | {score}分",f"**志愿数**: {total}条 (匹配{len(matched)}条, 未匹配{len(unmatched)}条)",""]
+    if matched:
+        def pct(n): return f"{n/(total or 1)*100:.1f}%"
+        lines+=["### 风险分布","","| 风险等级 | 数量 | 占比 |","|----------|------|------|",
+                f"| 极危 (>+20) | {len(danger)} | {pct(len(danger))} |",
+                f"| 冲刺 (+20~0) | {len(sprint)} | {pct(len(sprint))} |",
+                f"| 适合 (0~-10) | {len(suitable)} | {pct(len(suitable))} |",
+                f"| 稳妥 (-10~-20) | {len(safe)} | {pct(len(safe))} |",
+                f"| 托底 (<-20) | {len(bottom)} | {pct(len(bottom))} |",""]
+        sp=len(sprint)/(total or 1); dp=len(danger)/(total or 1)
+        spct=len(suitable)/(total or 1); sfpct=(len(safe)+len(bottom))/(total or 1)
+        lines+=["### 整体评价",""]
+        if dp>0.2: lines.append(f"- {pct(len(danger))}极危志愿，建议替换")
+        if sp>0.5: lines.append(f"- 冲刺{pct(len(sprint))}偏高，有滑档风险")
+        if spct>=0.3 and sp<=0.4: lines.append("- 冲稳保比例合理，风险可控")
+        if spct+sfpct>0.7: lines.append("- 偏保守，可适度冲刺")
+        lines+=["","### 冲稳保比例","| 类型 | 实际 | 推荐 |","|------|------|------|",
+                f"| 冲刺 | {pct(sp)} | 30% |",
+                f"| 适合 | {pct(spct)} | 30% |",
+                f"| 稳妥+托底 | {pct(sfpct)} | 40% |","",
+                "### 逐条详情","",
+                "| # | 院校 | 专业 | 2025录取分 | 分差 | 风险 |",
+                "|---|------|------|------------|------|------|"]
+        for i,r in enumerate(matched,1):
+            d=r["diff"]; tag="极危" if d>20 else "冲刺" if d>0 else "适合" if d>=-10 else "稳妥" if d>=-20 else "托底"
+            lines.append(f"| {i} | {r['school']} | {r['pro']} | {r['score_2025']} | {'+' if d>0 else ''}{d} | {tag} |")
+        if unmatched:
+            lines+=["",f"### 未匹配({len(unmatched)}条)"]
+            for r in unmatched: lines.append(f"- {r['school']} - {r['pro']}")
+        lines+=["","### 优化建议"]
+        if dp>0: lines.append(f"1. 替换{len(danger)}条极危志愿")
+        if sp>0.5: lines.append("2. 增加稳妥类志愿")
+        if spct+sfpct>0.8: lines.append("3. 适度增加冲刺志愿")
+        lines.append("4. 数据基于2025年录取，仅供参考")
+
+    return {"success":True,"answer":"\n".join(lines),"data":matched,
+            "stats":{"total":total,"matched":len(matched),"unmatched":len(unmatched),
+                     "danger":len(danger),"sprint":len(sprint),"suitable":len(suitable),
+                     "safe":len(safe),"bottom":len(bottom)}}
+
 
 
 # ============ 启动 ============
