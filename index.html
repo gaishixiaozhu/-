@@ -36,7 +36,8 @@ body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica
 #install-btn.show { display:inline-flex; }
 #header button { background:none; border:none; color:var(--sub); cursor:pointer; font-size:16px; padding:4px 8px; border-radius:6px; transition:all 0.2s; }
 #header button:hover { background:var(--hover); color:var(--text); }
-#main { display:flex; flex:1; overflow:hidden; }
+#main { display:flex; flex-direction:column; flex:1; overflow:hidden; }
+#main-inner { display:flex; flex:1; overflow:hidden; }
 #sidebar { width:220px; flex-shrink:0; background:var(--sidebar-bg); border-right:1px solid var(--border); display:flex; flex-direction:column; overflow:hidden; transition:width 0.2s; }
 #sidebar.collapsed { width:0; }
 #sidebar-header { padding:12px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; }
@@ -156,7 +157,82 @@ body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica
 ::-webkit-scrollbar-track { background:transparent; }
 ::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
 @media (max-width:600px) { #panel.open { width:100vw; } #sidebar { width:180px; } }
-</style>
+/* ===== 创新功能实验室 ===== */
+#lab-page { display:none; flex:1; flex-direction:column; overflow-y:auto; padding:16px; }
+#lab-page.active { display:flex; }
+#lab-back-btn { background:var(--hover); border:1px solid var(--border); color:var(--sub); cursor:pointer; font-size:13px; padding:6px 14px; border-radius:6px; margin-bottom:16px; align-self:flex-start; transition:all 0.2s; }
+#lab-back-btn:hover { background:var(--accent); color:white; border-color:var(--accent); }
+#lab-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+@media (max-width:600px) { #lab-grid { grid-template-columns:1fr; } }
+.lab-card { background:var(--card-bg); border:1px solid var(--border); border-radius:14px; padding:20px; cursor:pointer; transition:all 0.25s; position:relative; overflow:hidden; }
+.lab-card:hover { transform:translateY(-2px); box-shadow:0 8px 30px rgba(0,0,0,0.3); border-color:var(--accent); }
+.lab-card .lc-icon { font-size:36px; margin-bottom:10px; }
+.lab-card .lc-name { font-size:15px; font-weight:700; margin-bottom:6px; color:var(--text); }
+.lab-card .lc-desc { font-size:12px; color:var(--sub); line-height:1.5; }
+.lab-card .lc-badge { position:absolute; top:10px; right:10px; background:linear-gradient(135deg,#ff6b6b,#ee5a24); color:white; font-size:9px; font-weight:700; padding:2px 7px; border-radius:4px; letter-spacing:0.5px; }
+/* ===== 命理功能样式 ===== */
+.fortune-overlay { position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.7); z-index:10000; display:flex; align-items:center; justify-content:center; }
+.fortune-modal { background:var(--card-bg); border-radius:16px; padding:24px; width:460px; max-width:95vw; max-height:90vh; overflow-y:auto; border:1px solid var(--border); box-shadow:0 20px 60px rgba(0,0,0,0.5); }
+.fortune-modal.wide { width:700px; max-width:95vw; }
+.fortune-modal h3 { margin-bottom:16px; font-size:17px; background:linear-gradient(135deg,#8b5cf6,#06b6d4); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+.fortune-modal label { display:block; font-size:12px; color:var(--sub); margin-bottom:4px; margin-top:12px; }
+.fortune-modal input[type="text"] { width:100%; padding:9px 12px; border-radius:8px; border:1px solid var(--border); background:var(--input-bg); color:var(--text); font-size:13px; outline:none; }
+.fortune-modal input[type="text"]:focus { border-color:#8b5cf6; }
+.fortune-modal .pf-ref { font-size:11px; color:var(--sub); margin-bottom:12px; padding:8px 10px; background:var(--input-bg); border-radius:6px; border:1px solid var(--border); }
+.fortune-modal .f-btn-row { display:flex; gap:8px; margin-top:20px; justify-content:center; }
+.fortune-modal .f-btn { padding:8px 18px; border-radius:8px; border:none; cursor:pointer; font-size:13px; font-weight:600; transition:all 0.2s; }
+.fortune-modal .f-btn-primary { background:linear-gradient(135deg,#8b5cf6,#06b6d4); color:white; }
+.fortune-modal .f-btn-primary:hover { opacity:0.9; transform:translateY(-1px); }
+.fortune-modal .f-btn-secondary { background:var(--hover); color:var(--text); border:1px solid var(--border); }
+.fortune-time-grid { display:grid; grid-template-columns:repeat(6,1fr); gap:6px; }
+@media (max-width:400px) { .fortune-time-grid { grid-template-columns:repeat(4,1fr); } }
+.fortune-time-btn { padding:8px 0; border-radius:8px; border:1px solid var(--border); background:var(--input-bg); color:var(--sub); cursor:pointer; font-size:13px; text-align:center; transition:all 0.15s; }
+.fortune-time-btn:hover { border-color:#8b5cf6; color:#8b5cf6; }
+.fortune-time-btn.active { background:linear-gradient(135deg,#8b5cf6,#06b6d4); color:white; border-color:transparent; font-weight:700; }
+.fortune-gender-row { display:flex; gap:8px; }
+.fortune-gender-btn { flex:1; padding:10px; border-radius:8px; border:1px solid var(--border); background:var(--input-bg); color:var(--sub); cursor:pointer; font-size:14px; text-align:center; transition:all 0.15s; }
+.fortune-gender-btn:hover { border-color:#8b5cf6; color:#8b5cf6; }
+.fortune-gender-btn.active { background:linear-gradient(135deg,#8b5cf6,#06b6d4); color:white; border-color:transparent; font-weight:700; }
+/* 加载动画 */
+.fortune-loading { text-align:center; padding:40px 20px; }
+.fortune-loading .fl-bg { background:radial-gradient(ellipse at center,rgba(139,92,246,0.15),transparent 70%); padding:30px; border-radius:50%; display:inline-block; position:relative; }
+.fortune-loading .fl-spin { font-size:48px; animation:spin 1.5s linear infinite; }
+@keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+.fortune-loading .fl-stars { position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; }
+.fortune-loading .fl-star { position:absolute; font-size:16px; animation:starPulse 1.8s ease-in-out infinite; }
+@keyframes starPulse { 0%,100%{opacity:0.2;transform:scale(0.6)} 50%{opacity:1;transform:scale(1.3)} }
+.fortune-loading .fl-progress { width:200px; height:4px; background:var(--border); border-radius:2px; margin:20px auto 12px; overflow:hidden; }
+.fortune-loading .fl-progress-bar { height:100%; background:linear-gradient(90deg,#8b5cf6,#06b6d4); border-radius:2px; transition:width 0.15s; width:0; }
+.fortune-loading .fl-text { font-size:13px; color:var(--sub); }
+/* 结果展示 */
+.fortune-result { display:flex; gap:20px; }
+@media (max-width:600px) { .fortune-result { flex-direction:column; } }
+.fortune-result .fr-col { flex:1; min-width:0; }
+.fortune-result .fr-title { font-size:14px; font-weight:700; margin-bottom:12px; padding-bottom:8px; border-bottom:2px solid; border-image:linear-gradient(90deg,#8b5cf6,#06b6d4) 1; }
+.fortune-bazi { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:16px; }
+.fortune-bazi .bazi-cell { background:var(--input-bg); border-radius:8px; padding:8px 10px; text-align:center; border:1px solid var(--border); }
+.fortune-bazi .bazi-label { font-size:10px; color:var(--sub); margin-bottom:2px; }
+.fortune-bazi .bazi-val { font-size:15px; font-weight:700; color:var(--text); }
+.fortune-wx-bar { margin-bottom:6px; }
+.fortune-wx-bar .wx-label { font-size:11px; display:flex; justify-content:space-between; margin-bottom:2px; }
+.fortune-wx-bar .wx-track { height:6px; background:var(--border); border-radius:3px; overflow:hidden; }
+.fortune-wx-bar .wx-fill { height:100%; border-radius:3px; transition:width 0.5s; }
+.fortune-traits { list-style:none; padding:0; }
+.fortune-traits li { padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.04); font-size:12px; color:var(--sub); display:flex; gap:6px; align-items:flex-start; }
+.fortune-traits li::before { content:'✦'; color:#8b5cf6; flex-shrink:0; }
+.fortune-majors { display:flex; flex-direction:column; gap:6px; max-height:380px; overflow-y:auto; padding-right:4px; }
+.fortune-major-item { background:var(--input-bg); border:1px solid var(--border); border-radius:8px; padding:8px 10px; cursor:pointer; transition:all 0.15s; }
+.fortune-major-item:hover { border-color:#8b5cf6; }
+.fortune-major-item.selected { border-color:#8b5cf6; background:rgba(139,92,246,0.1); }
+.fortune-major-item .fm-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:3px; }
+.fortune-major-item .fm-name { font-size:13px; font-weight:600; color:var(--text); }
+.fortune-major-item .fm-reason { font-size:11px; color:var(--sub); margin-bottom:4px; }
+.fortune-major-item .fm-bar { height:4px; background:var(--border); border-radius:2px; overflow:hidden; }
+.fortune-major-item .fm-bar-fill { height:100%; border-radius:2px; background:linear-gradient(90deg,#8b5cf6,#06b6d4); }
+.fortune-major-item .fm-score { font-size:11px; color:#8b5cf6; font-weight:700; margin-left:8px; }
+.fortune-check { display:inline-block; width:18px; height:18px; border-radius:4px; border:2px solid var(--border); font-size:11px; text-align:center; line-height:14px; margin-right:6px; flex-shrink:0; transition:all 0.15s; }
+.fortune-major-item.selected .fortune-check { border-color:#8b5cf6; background:#8b5cf6; color:white; }
+.fortune-result .f-btn-row { margin-top:20px; flex-wrap:wrap; }
 </head>
 <body>
 <button id="launcher" title="蜻蜓龙虾助手">🦞</button>
@@ -168,20 +244,39 @@ body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica
       <button id="toggle-sidebar-btn" title="侧边栏">☰</button>
       <button id="settings-btn" title="设置">⚙</button>
       <button id="close-btn" title="关闭">✕</button>
+      <button id="lab-btn" title="创新功能实验室">🧪</button>
     </div>
   </div>
-  <div id="profile-bar">
-    <span class="pf-label">📋 考生信息</span>
-    <div class="pf-group" id="pf-prov"><select id="pf-prov-sel"><option value="">省份</option></select></div>
-    <div class="pf-group" id="pf-subject"><select id="pf-subject-sel"><option value="">选科</option><option value="物理">首选科目物理</option><option value="历史">首选科目历史</option><option value="文科">文科</option><option value="理科">理科</option></select></div>
-    <div class="pf-group" id="pf-score"><input type="number" id="pf-score-lo" class="pf-score" placeholder="最低分" min="0" max="900"><span class="pf-dash">~</span><input type="number" id="pf-score-hi" class="pf-score" placeholder="最高分" min="0" max="900"></div>
-    <span class="pf-hint" id="pf-hint" style="display:none">⚠ 请填写考生信息</span>
-  </div>
-  <div id="action-bar">
-    <button class="act-btn primary" id="risk-assess-btn">🔍 志愿单风险评估</button>
-    <span style="font-size:10px;color:var(--sub);margin-left:4px">上传志愿表图片或文件，自动识别并评估风险</span>
+  <!-- 创新功能实验室页面 -->
+  <div id="lab-page">
+    <button id="lab-back-btn">← 返回助手</button>
+    <div id="lab-grid">
+      <div class="lab-card" data-lab="risk-assessment">
+        <div class="lc-icon">🔍</div>
+        <div class="lc-name">志愿单风险评估</div>
+        <div class="lc-desc">上传志愿表文件，AI智能评估冲稳保比例，给出风险建议</div>
+      </div>
+      <div class="lab-card" data-lab="fortune-major">
+        <div class="lc-icon">🔮</div>
+        <div class="lc-name">生辰命理测专业</div>
+        <div class="lc-desc">输入农历生辰八字，基于周易五行分析专业适配度</div>
+        <div class="lc-badge">NEW</div>
+      </div>
+    </div>
   </div>
   <div id="main">
+    <div id="profile-bar">
+      <span class="pf-label">📋 考生信息</span>
+      <div class="pf-group" id="pf-prov"><select id="pf-prov-sel"><option value="">省份</option></select></div>
+      <div class="pf-group" id="pf-subject"><select id="pf-subject-sel"><option value="">选科</option><option value="物理">首选科目物理</option><option value="历史">首选科目历史</option><option value="文科">文科</option><option value="理科">理科</option></select></div>
+      <div class="pf-group" id="pf-score"><input type="number" id="pf-score-lo" class="pf-score" placeholder="最低分" min="0" max="900"><span class="pf-dash">~</span><input type="number" id="pf-score-hi" class="pf-score" placeholder="最高分" min="0" max="900"></div>
+      <span class="pf-hint" id="pf-hint" style="display:none">⚠ 请填写考生信息</span>
+    </div>
+    <div id="action-bar">
+      <button class="act-btn primary" id="risk-assess-btn">🔍 志愿单风险评估</button>
+      <span style="font-size:10px;color:var(--sub);margin-left:4px">上传志愿表图片或文件，自动识别并评估风险</span>
+    </div>
+    <div id="main-inner">
     <div id="sidebar">
       <div id="sidebar-header"><span>历史对话</span><button id="clear-history-btn">清空</button></div>
       <div id="chat-list"></div>
@@ -193,6 +288,7 @@ body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica
         <textarea id="input-box" placeholder="输入省份+选科+分数，如：辽宁物理类520分推荐..." rows="1"></textarea>
         <button id="send-btn" title="发送">➤</button>
       </div>
+    </div>
     </div>
   </div>
 </div>
@@ -731,7 +827,7 @@ function showRiskAssessment(){
   h+='<div class="upload-zone" id="upload-zone">';
   h+='<div class="upload-icon">📤</div>';
   h+='<div class="upload-text">点击上传志愿表图片或文件</div>';
-  h+='<div class="upload-hint">支持 JPG/PNG 图片 · 文件大小不超过10MB</div>';
+  h+='<div class="upload-hint">支持 Excel/CSV/TXT/图片 · 不超过10MB</div>';
   h+='<input type="file" id="upload-input" accept="image/*,.xlsx,.csv,.txt" style="display:none">';
   h+='</div>';
   h+='<div id="upload-preview" style="display:none"></div>';
@@ -765,7 +861,9 @@ function showRiskAssessment(){
       };
       reader.readAsDataURL(file);
     }else{
-      preview.innerHTML='<div style="font-size:12px;color:var(--green)">✅ '+esc(file.name)+' ('+(file.size/1024).toFixed(0)+'KB) 已选择</div>';
+      var ext=file.name.split('.').pop().toLowerCase();
+      var extLabel=ext==='xlsx'||ext==='xls'?'📊 Excel文件':ext==='csv'?'📄 CSV文件':ext==='txt'?'📝 文本文件':'📎 文件';
+      preview.innerHTML='<div style="font-size:13px;color:var(--green)">✅ '+extLabel+': '+esc(file.name)+' ('+(file.size/1024).toFixed(0)+'KB)</div>';
     }
     document.getElementById('upload-status').textContent='';
     document.getElementById('risk-start').disabled=false;
@@ -807,6 +905,303 @@ async function runRiskAssessment(file,prov,subject,scoreLo,scoreHi,ov){
 }
 
 document.getElementById('risk-assess-btn').addEventListener('click',showRiskAssessment);
+
+/* ==================== 创新功能实验室 ==================== */
+var labPage=document.getElementById('lab-page');
+var mainArea=document.getElementById('main');
+var labBtn=document.getElementById('lab-btn');
+var labBackBtn=document.getElementById('lab-back-btn');
+
+labBtn.addEventListener('click',function(){
+  mainArea.style.display='none';
+  labPage.classList.add('active');
+  labPage.style.display='flex';
+});
+
+labBackBtn.addEventListener('click',function(){
+  mainArea.style.display='';
+  labPage.classList.remove('active');
+  labPage.style.display='none';
+});
+
+labPage.querySelectorAll('.lab-card').forEach(function(card){
+  card.addEventListener('click',function(){
+    var lab=this.dataset.lab;
+    if(lab==='risk-assessment'){
+      labBackBtn.click();
+      setTimeout(function(){ showRiskAssessment(); },100);
+    }else if(lab==='fortune-major'){
+      showFortuneMajor();
+    }
+  });
+});
+
+/* ==================== 生辰命理测专业 ==================== */
+function showFortuneMajor(){
+  var ov=document.createElement('div');
+  ov.className='fortune-overlay';
+  ov.id='fortune-overlay';
+  var provInfo=profile.province||'未设置';
+  var subjInfo=profile.subject||'未设置';
+  var userName=state.userName||'';
+  var h='<div class="fortune-modal">';
+  h+='<h3>🔮 生辰命理测专业</h3>';
+  h+='<div class="pf-ref">📋 当前考生信息：<b>'+esc(provInfo)+(subjInfo?' | '+esc(subjInfo):'')+'</b>（将用于专业推荐匹配）</div>';
+  h+='<label>姓名</label><input type="text" id="fortune-name" placeholder="请输入姓名" value="'+esc(userName)+'">';
+  h+='<label>出生日期（农历）</label><input type="text" id="fortune-birth" placeholder="如：2006年正月初八">';
+  h+='<label>出生时辰</label><div class="fortune-time-grid" id="fortune-time-grid">';
+  var times=['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
+  var timeLabels=['子时 23-1','丑时 1-3','寅时 3-5','卯时 5-7','辰时 7-9','巳时 9-11','午时 11-13','未时 13-15','申时 15-17','酉时 17-19','戌时 19-21','亥时 21-23'];
+  for(var ti=0;ti<times.length;ti++){
+    h+='<div class="fortune-time-btn" data-time="'+times[ti]+'" title="'+timeLabels[ti]+'">'+times[ti]+'</div>';
+  }
+  h+='</div>';
+  h+='<label>性别</label><div class="fortune-gender-row" id="fortune-gender">';
+  h+='<div class="fortune-gender-btn" data-gender="男">👨 男</div>';
+  h+='<div class="fortune-gender-btn" data-gender="女">👩 女</div>';
+  h+='</div>';
+  h+='<div class="f-btn-row"><button class="f-btn f-btn-primary" id="fortune-start-btn">🌟 命理分析定专业</button></div>';
+  h+='<div class="f-btn-row"><button class="f-btn f-btn-secondary" id="fortune-cancel-btn">取消</button></div>';
+  h+='</div>';
+  ov.innerHTML=h;
+  document.body.appendChild(ov);
+  var selectedTime=null;
+  var selectedGender='男';
+  ov.querySelectorAll('.fortune-time-btn').forEach(function(btn){
+    btn.addEventListener('click',function(){
+      ov.querySelectorAll('.fortune-time-btn').forEach(function(b){ b.classList.remove('active'); });
+      this.classList.add('active');
+      selectedTime=this.dataset.time;
+    });
+  });
+  ov.querySelectorAll('.fortune-gender-btn').forEach(function(btn){
+    btn.addEventListener('click',function(){
+      ov.querySelectorAll('.fortune-gender-btn').forEach(function(b){ b.classList.remove('active'); });
+      this.classList.add('active');
+      selectedGender=this.dataset.gender;
+    });
+  });
+  var firstGenderBtn=ov.querySelector('.fortune-gender-btn[data-gender="男"]');
+  if(firstGenderBtn) firstGenderBtn.classList.add('active');
+  document.getElementById('fortune-cancel-btn').onclick=function(){ ov.remove(); };
+  ov.addEventListener('click',function(e){ if(e.target===ov) ov.remove(); });
+  document.getElementById('fortune-start-btn').onclick=function(){
+    var name=ov.querySelector('#fortune-name').value.trim()||'未填写';
+    var birth=ov.querySelector('#fortune-birth').value.trim();
+    if(!birth){ toast('请输入出生日期'); return; }
+    if(!selectedTime){ toast('请选择出生时辰'); return; }
+    var result=analyzeFortune(birth,selectedTime,selectedGender,name,profile.subject||'');
+    showFortuneResult(ov,result,name,birth,selectedTime,selectedGender);
+  };
+}
+
+function analyzeFortune(birthDate,birthTime,gender,name,subject){
+  var dHash=0;
+  for(var i=0;i<birthDate.length;i++){ dHash+=birthDate.charCodeAt(i); }
+  var tHash=0;
+  for(var i=0;i<birthTime.length;i++){ tHash+=birthTime.charCodeAt(i); }
+  var chars='甲乙丙丁戊己庚辛壬癸';
+  var branches='子丑寅卯辰巳午未申酉戌亥';
+  var ganWuxing={'甲':'木','乙':'木','丙':'火','丁':'火','戊':'土','己':'土','庚':'金','辛':'金','壬':'水','癸':'水'};
+  var zhiWuxing={'子':'水','丑':'土','寅':'木','卯':'木','辰':'土','巳':'火','午':'火','未':'土','申':'金','酉':'金','戌':'土','亥':'水'};
+  var yearGan=chars[(dHash*2+tHash)%10];
+  var yearZhi=branches[(dHash+tHash*3)%12];
+  var monthGan=chars[(dHash+tHash)%10];
+  var monthZhi=branches[(dHash+tHash*2)%12];
+  var dayGan=chars[(dHash*3)%10];
+  var dayZhi=branches[(dHash*2)%12];
+  var hourGan=chars[(dHash*4+tHash*2)%10];
+  var hourZhi=branches[(tHash*5+dHash)%12];
+  var bazi={year:yearGan+yearZhi,month:monthGan+monthZhi,day:dayGan+dayZhi,hour:hourGan+hourZhi};
+  var wc={金:0,木:0,水:0,火:0,土:0};
+  var pillars=[{gan:yearGan,zhi:yearZhi},{gan:monthGan,zhi:monthZhi},{gan:dayGan,zhi:dayZhi},{gan:hourGan,zhi:hourZhi}];
+  for(var pi=0;pi<pillars.length;pi++){
+    var p=pillars[pi];
+    var gw=ganWuxing[p.gan];
+    var zw=zhiWuxing[p.zhi];
+    if(gw) wc[gw]++;
+    if(zw) wc[zw]++;
+  }
+  var total=wc['金']+wc['木']+wc['水']+wc['火']+wc['土'];
+  var wuxing=[];
+  var wxColors={金:'#ffd700',木:'#4caf50',水:'#4a90d9',火:'#ff6b35',土:'#d4a574'};
+  var wxNames=['金','木','水','火','土'];
+  for(var wi=0;wi<wxNames.length;wi++){
+    var wx=wxNames[wi];
+    wuxing.push({name:wx,percent:total>0?Math.round((wc[wx]||0)/total*100):20,color:wxColors[wx]});
+  }
+  var traits=[];
+  var traitMap={'甲':['如参天大树，正直刚毅','目标明确，不轻易妥协','有领导潜质，敢于担当'],'乙':['似藤蔓柔韧，适应力强','心思细腻，善解人意','在协作中发光发热'],'丙':['如烈日当空，热情奔放','感染力强，天生的鼓舞者','精力充沛，行动力强'],'丁':['如星火燎原，内敛而持久','思维敏锐，洞察力佳','用心专注，精益求精'],'戊':['如厚土载物，稳重可靠','踏实肯干，守成有道','耐力十足，厚积薄发'],'己':['如田园沃土，温和包容','注重细节，善理财物','谦逊务实，合作精神佳'],'庚':['如刀剑锋利，果断刚强','勇于变革，不惧挑战','原则性强，公正无私'],'辛':['如美玉精金，精致优雅','品味独特，审美出众','自律严谨，追求完美'],'壬':['如江河奔流，智慧通达','思维活跃，善于变通','胸怀宽广，志向远大'],'癸':['如雨露滋润，润物无声','直觉敏锐，洞察人心','富有创意，想象力丰富']};
+  var dayTrait=traitMap[dayGan]||['思虑周全，行事稳健','好奇心强，善于学习','平衡各方，追求和谐'];
+  traits=dayTrait;
+  var subjectMap={'物理':['计算机科学','软件工程','电子信息工程','人工智能','自动化','机械工程','电气工程','数据科学','信息安全','网络工程'],'化学':['化学工程','应用化学','材料化学','制药工程','生物工程','环境工程','药学','食品科学','能源化工','高分子材料'],'历史':['历史学','考古学','汉语言文学','新闻学','法学','哲学','文物修复','文化产业管理','社会学','教育学'],'政治':['法学','思想政治教育','政治学','社会学','公共管理','国际关系','行政管理','人力资源','社会保障','新闻传播'],'文科':['汉语言文学','新闻学','法学','教育学','社会学','历史学','哲学','心理学','行政管理','文化产业管理'],'理科':['计算机科学','软件工程','电子信息工程','数据科学','人工智能','生物工程','化学工程','数学','物理学','自动化']};
+  var subjectName=subject||'理科';
+  var baseMajors=subjectMap[subjectName]||subjectMap['理科'];
+  var majorSeed=dHash*7+tHash*13+(gender==='男'?3:7);
+  var rankedMajors=[];
+  var reasons=['五行契合度高，天赋领域','命局旺相，发展顺遂','八字用神匹配，成才之路','命宫星曜呼应，先天优势','学业运程看好，大有可为'];
+  for(var mi=0;mi<baseMajors.length;mi++){
+    if(mi>=10) break;
+    var mname=baseMajors[mi];
+    var score=96-mi*1.2;
+    if(gender==='男'){ if(mname==='机械工程') score+=3; if(mname==='电气工程') score+=2; }
+    else{ if(mname==='护理学') score+=5; if(mname==='教育学') score+=3; }
+    var mHash=0;
+    for(var ci=0;ci<mname.length;ci++) mHash+=mname.charCodeAt(ci);
+    var adjust=(mHash+majorSeed+mi*7)%5-2;
+    score+=adjust;
+    score=Math.max(85,Math.min(98,Math.round(score)));
+    rankedMajors.push({name:mname,score:score,reason:reasons[(mi+majorSeed)%reasons.length],rank:mi+1});
+  }
+  rankedMajors.sort(function(a,b){ return b.score-a.score; });
+  for(var ri=0;ri<rankedMajors.length;ri++){ rankedMajors[ri].rank=ri+1; }
+  return {bazi:bazi,wuxing:wuxing,traits:traits,majors:rankedMajors,gender:gender,subject:subjectName,birthDate:birthDate,birthTime:birthTime,name:name};
+}
+
+function showFortuneResult(ov,result,name,birth,birthTime,gender){
+  var modal=ov.querySelector('.fortune-modal');
+  var loadH='<div class="fortune-loading"><div class="fl-bg"><div class="fl-spin">🌀</div><div class="fl-stars" id="fl-stars"></div></div><div class="fl-progress"><div class="fl-progress-bar" id="fl-progress-bar"></div></div><div class="fl-text">命理星盘正在生成中...</div></div>';
+  modal.innerHTML=loadH;
+  modal.className='fortune-modal';
+  var starsContainer=document.getElementById('fl-stars');
+  var starPositions=[{top:'10%',left:'20%',delay:'0s'},{top:'5%',left:'60%',delay:'0.2s'},{top:'15%',left:'80%',delay:'0.4s'},{top:'70%',left:'15%',delay:'0.1s'},{top:'75%',left:'65%',delay:'0.5s'},{top:'80%',left:'40%',delay:'0.3s'},{top:'25%',left:'90%',delay:'0.15s'},{top:'55%',left:'5%',delay:'0.35s'},{top:'30%',left:'35%',delay:'0.25s'},{top:'60%',left:'85%',delay:'0.45s'},{top:'45%',left:'50%',delay:'0.05s'},{top:'40%',left:'10%',delay:'0.5s'}];
+  for(var si=0;si<12;si++){
+    var sp=starPositions[si]||{top:'50%',left:'50%',delay:'0s'};
+    var star=document.createElement('span');
+    star.className='fl-star'; star.textContent='✨';
+    star.style.top=sp.top; star.style.left=sp.left; star.style.animationDelay=sp.delay;
+    starsContainer.appendChild(star);
+  }
+  var progressBar=document.getElementById('fl-progress-bar');
+  var progress=0;
+  var progressInterval=setInterval(function(){
+    progress+=2;
+    if(progress>100) progress=100;
+    progressBar.style.width=progress+'%';
+    if(progress>=100){
+      clearInterval(progressInterval);
+      setTimeout(function(){ showFortuneDetail(modal,result,name,birth,birthTime,gender); },400);
+    }
+  },40);
+}
+
+function showFortuneDetail(modal,result,name,birth,birthTime,gender){
+  modal.className='fortune-modal wide';
+  var selectedMajors={};
+  for(var i=0;i<Math.min(5,result.majors.length);i++){ selectedMajors[result.majors[i].name]=true; }
+  function renderResult(){
+    var h='<h3 style="margin-bottom:8px">🔮 生辰命理测专业</h3>';
+    h+='<div style="font-size:11px;color:var(--sub);margin-bottom:16px">'+esc(name)+' | '+esc(birth)+' | '+esc(birthTime)+'时 | '+esc(gender)+' | '+esc(result.subject)+'</div>';
+    h+='<div class="fortune-result">';
+    h+='<div class="fr-col"><div class="fr-title">📜 命理解读</div>';
+    h+='<div style="font-size:12px;color:var(--sub);margin-bottom:6px">八字四柱</div><div class="fortune-bazi">';
+    var bl=['年柱','月柱','日柱','时柱'],bk=['year','month','day','hour'];
+    for(var i=0;i<bk.length;i++){ h+='<div class="bazi-cell"><div class="bazi-label">'+bl[i]+'</div><div class="bazi-val">'+result.bazi[bk[i]]+'</div></div>'; }
+    h+='</div>';
+    h+='<div style="font-size:12px;color:var(--sub);margin:12px 0 6px">五行分析</div>';
+    for(var wi=0;wi<result.wuxing.length;wi++){
+      var wx=result.wuxing[wi];
+      h+='<div class="fortune-wx-bar"><div class="wx-label"><span>'+wx.name+'</span><span style="color:'+wx.color+'">'+wx.percent+'%</span></div><div class="wx-track"><div class="wx-fill" style="width:'+wx.percent+'%;background:'+wx.color+'"></div></div></div>';
+    }
+    h+='<div style="font-size:12px;color:var(--sub);margin:12px 0 6px">命理特质</div><ul class="fortune-traits">';
+    for(var ti=0;ti<result.traits.length;ti++){ h+='<li>'+esc(result.traits[ti])+'</li>'; }
+    h+='</ul></div>';
+    h+='<div class="fr-col"><div class="fr-title">🎯 推荐专业</div><div class="fortune-majors" id="fortune-majors-list">';
+    for(var mj=0;mj<result.majors.length;mj++){
+      var m=result.majors[mj];
+      var sel=!!selectedMajors[m.name];
+      h+='<div class="fortune-major-item'+(sel?' selected':'')+'" data-major="'+esc(m.name)+'">';
+      h+='<div class="fm-top"><span style="display:flex;align-items:center"><span class="fortune-check">'+(sel?'✓':'')+'</span><span class="fm-name">#'+m.rank+' '+esc(m.name)+'</span></span><span class="fm-score">'+m.score+'分</span></div>';
+      h+='<div class="fm-reason">'+esc(m.reason)+'</div>';
+      h+='<div class="fm-bar"><div class="fm-bar-fill" style="width:'+m.score+'%"></div></div>';
+      h+='</div>';
+    }
+    h+='</div></div></div>';
+    h+='<div class="f-btn-row" style="margin-top:20px"><button class="f-btn f-btn-secondary" id="fortune-dl-btn">📥 下载报告</button><button class="f-btn f-btn-primary" id="fortune-add-btn">★ 一键加入方案</button></div>';
+    h+='<div class="f-btn-row" style="margin-top:8px"><button class="f-btn f-btn-secondary" id="fortune-close-result">关闭</button></div>';
+    return h;
+  }
+  modal.innerHTML=renderResult();
+  modal.querySelectorAll('.fortune-major-item').forEach(function(item){
+    item.addEventListener('click',function(){
+      var mn=this.dataset.major;
+      if(selectedMajors[mn]){ delete selectedMajors[mn]; }else{ selectedMajors[mn]=true; }
+      this.classList.toggle('selected');
+      var check=this.querySelector('.fortune-check');
+      if(check) check.textContent=selectedMajors[mn]?'✓':'';
+    });
+  });
+  document.getElementById('fortune-dl-btn').onclick=function(){ downloadFortuneReport(result,name,birth,birthTime,gender,selectedMajors); };
+  document.getElementById('fortune-add-btn').onclick=function(){
+    var sl=[];
+    for(var mn in selectedMajors){ if(selectedMajors[mn]) sl.push(mn); }
+    if(sl.length===0){ toast('请至少选择一个专业'); return; }
+    var ct='🔮 命理推荐专业方案\n\n👤 '+esc(name)+' | '+esc(birth)+' | '+esc(birthTime)+'时 | '+esc(gender)+'\n📋 选科：'+esc(result.subject)+'\n📜 八字：年'+result.bazi.year+' 月'+result.bazi.month+' 日'+result.bazi.day+' 时'+result.bazi.hour+'\n\n推荐专业：\n';
+    for(var si=0;si<sl.length;si++){
+      for(var mj=0;mj<result.majors.length;mj++){
+        if(result.majors[mj].name===sl[si]){ ct+=(si+1)+'. '+sl[si]+' （适配度：'+result.majors[mj].score+'分）\n'; break; }
+      }
+    }
+    var overlay=document.getElementById('fortune-overlay');
+    if(overlay) overlay.remove();
+    addMsg('user',ct);
+    setTimeout(function(){ sendBtn.click(); },300);
+    toast('✅ 已加入方案');
+  };
+  document.getElementById('fortune-close-result').onclick=function(){
+    var overlay=document.getElementById('fortune-overlay');
+    if(overlay) overlay.remove();
+  };
+}
+
+function downloadFortuneReport(result,name,birth,birthTime,gender,selectedMajors){
+  var wxColors={金:'#ffd700',木:'#4caf50',水:'#4a90d9',火:'#ff6b35',土:'#d4a574'};
+  var h='<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><title>生辰命理测专业报告</title><style>';
+  h+='body{font-family:"Microsoft YaHei","PingFang SC",sans-serif;background:linear-gradient(135deg,#0f0c29,#302b63,#24243e);color:#e0e0e0;min-height:100vh;padding:40px 20px}';
+  h+='.container{max-width:800px;margin:0 auto}h1{text-align:center;background:linear-gradient(135deg,#8b5cf6,#06b6d4);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-size:28px;margin-bottom:8px}';
+  h+='.sub{text-align:center;color:#999;font-size:13px;margin-bottom:30px}';
+  h+='.card{background:rgba(30,30,54,0.8);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:24px;margin-bottom:20px}';
+  h+='.card h2{font-size:18px;margin-bottom:16px;color:#8b5cf6}.bazi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}';
+  h+='.bazi-cell{background:rgba(0,0,0,0.3);border-radius:10px;padding:12px;text-align:center}.bazi-label{font-size:11px;color:#999;margin-bottom:4px}.bazi-val{font-size:20px;font-weight:700}';
+  h+='.wx-bar{margin-bottom:8px}.wx-label{display:flex;justify-content:space-between;font-size:13px;margin-bottom:3px}.wx-track{height:8px;background:rgba(255,255,255,0.1);border-radius:4px;overflow:hidden}.wx-fill{height:100%;border-radius:4px}';
+  h+='.traits{list-style:none;padding:0}.traits li{padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.04);padding-left:16px;position:relative}.traits li::before{content:"✦";position:absolute;left:0;color:#8b5cf6}';
+  h+='.major-item{background:rgba(0,0,0,0.2);border-radius:10px;padding:12px 16px;margin-bottom:8px;display:flex;align-items:center;gap:12px}';
+  h+='.major-rank{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#8b5cf6,#06b6d4);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0}';
+  h+='.major-info{flex:1}.major-name{font-weight:600;margin-bottom:2px}.major-reason{font-size:12px;color:#999}.major-score{color:#8b5cf6;font-weight:700;font-size:16px}';
+  h+='.footer{text-align:center;color:#555;font-size:11px;margin-top:30px}.summary{font-size:13px;color:#ccc;line-height:1.8}';
+  h+='</style></head><body><div class="container">';
+  h+='<h1>🔮 生辰命理测专业报告</h1>';
+  h+='<div class="sub">👤 '+esc(name)+' | 📅 '+esc(birth)+' | 🕐 '+esc(birthTime)+'时 | '+esc(gender)+' | 选科：'+esc(result.subject)+'</div>';
+  h+='<div class="card"><h2>📜 八字四柱</h2><div class="bazi-grid">';
+  var bl=['年柱','月柱','日柱','时柱'],bk=['year','month','day','hour'];
+  for(var i=0;i<bl.length;i++){ h+='<div class="bazi-cell"><div class="bazi-label">'+bl[i]+'</div><div class="bazi-val">'+result.bazi[bk[i]]+'</div></div>'; }
+  h+='</div></div>';
+  h+='<div class="card"><h2>☯ 五行分析</h2>';
+  for(var wi=0;wi<result.wuxing.length;wi++){
+    var wx=result.wuxing[wi];
+    h+='<div class="wx-bar"><div class="wx-label"><span>'+wx.name+'</span><span style="color:'+(wxColors[wx.name]||'#999')+'">'+wx.percent+'%</span></div><div class="wx-track"><div class="wx-fill" style="width:'+wx.percent+'%;background:'+(wxColors[wx.name]||'#999')+'"></div></div></div>';
+  }
+  h+='</div>';
+  h+='<div class="card"><h2>🔮 命理特质</h2><ul class="traits">';
+  for(var ti=0;ti<result.traits.length;ti++){ h+='<li>'+esc(result.traits[ti])+'</li>'; }
+  h+='</ul></div>';
+  h+='<div class="card"><h2>🎯 推荐专业</h2>';
+  for(var mj=0;mj<result.majors.length;mj++){
+    var m=result.majors[mj];
+    var sel=selectedMajors[m.name]?' ✓ 已选':'';
+    h+='<div class="major-item"><div class="major-rank">'+m.rank+'</div><div class="major-info"><div class="major-name">'+m.name+sel+'</div><div class="major-reason">'+esc(m.reason)+'</div></div><div class="major-score">'+m.score+'分</div></div>';
+  }
+  h+='</div>';
+  h+='<div class="card"><h2>💡 发展建议</h2><div class="summary">根据命理五行分析和专业适配度，建议优先选择适配度最高的专业方向。在大学期间，可根据命局喜用神选择辅修方向，扬长避短。同时建议在校期间多参与与所选专业相关的实践活动，将命理天赋转化为实际能力。</div></div>';
+  h+='<div class="footer">本报告由蜻蜓龙虾助手 · 命理分析功能生成 | 仅供娱乐参考</div>';
+  h+='</div></body></html>';
+  var b=new Blob(['\ufeff'+h],{type:'text/html;charset=UTF-8'});
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(b);
+  a.download='命理测专业报告_'+esc(name)+'_'+new Date().toISOString().slice(0,10)+'.html';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  toast('📥 报告已下载 ✓');
+}
 
 </script>
 </body>
