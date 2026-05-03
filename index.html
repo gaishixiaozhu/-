@@ -1057,7 +1057,124 @@ function analyzeFortune(birthDate,birthTime,gender,name,subject){
   }
   rankedMajors.sort(function(a,b){ return b.score-a.score; });
   for(var ri=0;ri<rankedMajors.length;ri++){ rankedMajors[ri].rank=ri+1; }
-  return {bazi:bazi,wuxing:wuxing,traits:traits,majors:rankedMajors,gender:gender,subject:subjectName,birthDate:birthDate,birthTime:birthTime,name:name};
+  // === 新增数据字段 ===
+  var dominantWx=wuxing[0].name;
+  for(var wi=1;wi<wuxing.length;wi++){ if(wuxing[wi].percent>wuxing[0].percent) dominantWx=wuxing[wi].name; }
+  // 五行解读（300字左右）
+  var wuxingDescMap={
+    '金':'命局金气旺盛，刚毅果断，意志坚定如金石。金主义，主变革，主决断。金旺者行事雷厉风行，不畏艰难，有统帅之才。然金多则刚愎自用，易伤人伤己，需以水润之、以火炼之。金弱则缺乏决断力，遇事优柔寡断，宜以土生金或以金助之。观本命金气与诸元素之消长关系，可明自身行事之道。',
+    '木':'命局木气充盈，仁爱宽厚，生机勃勃。木主仁，主生长，主创造。木旺者思维敏捷，富有同情心，善于创新开拓。然木多则固执己见，易钻牛角尖，需以金修剪、以土培育。木弱则缺乏主见，随波逐流，宜以水养木或以木相助。观本命木气与其他五行之相生相克，可知进退之机、取舍之度。',
+    '水':'命局水气充沛，智慧深邃，灵活圆融。水主智，主变通，主润下。水旺者思维敏捷，善于变通，学识渊博，有远见卓识。然水多则泛滥无制，心思游移不定，需以土制水、以木泄水。水弱则思维僵化，缺乏灵感，宜以金生水或以水相助。观本命水气流转之势，可明学识之道、智慧之源。',
+    '火':'命局火气旺盛，热情奔放，光明磊落。火主礼，主文明，主向上。火旺者精力充沛，感染力强，富有领导魅力，做事积极主动。然火多则急躁冲动，易惹是非，需以水制火、以土泄火。火弱则缺乏热情，行动力不足，宜以木生火或以火相助。观本命火气升降之势，可明事业之道、进取之力。',
+    '土':'命局土气厚重，诚信敦厚，稳重踏实。土主信，主承载，主化育。土旺者诚信可靠，脚踏实地，包容大度，善于统筹管理。然土多则保守固执，反应迟钝，需以木疏土、以金泄土。土弱则根基不稳，缺乏定力，宜以火生土或以土相助。观本命土气厚薄之势，可明立身之本、事业之基。'
+  };
+  var wuxingDesc=wuxingDescMap[dominantWx]||wuxingDescMap['土'];
+  // 性格详解（300字左右）
+  var personalityDescMap={
+    '甲':'日主甲木，如参天大树，性格正直刚毅，光明磊落，有强烈的上进心和领导欲。为人处事讲究原则，不喜拐弯抹角，做事雷厉风行。甲木之人胸怀宽广，志向远大，不甘平庸，常能凭借坚定的意志力克服重重困难。然有时过于刚直，不够圆融，需学会适当的柔韧之道。在团队中往往扮演核心角色，是天生的组织者和引领者。内心善良宽厚，乐于助人，但有时会因过于理想化而产生落差感。适合需要魄力和担当的职业方向，在压力下反而更能激发潜能。',
+    '乙':'日主乙木，如藤蔓柔韧，性格温和谦逊，适应能力强，善于在复杂环境中找到自己的位置。乙木之人心思细腻，善解人意，有敏锐的直觉和审美能力。为人低调谦和，不喜争强好胜，但内心柔中有刚，关键时刻能展现惊人的韧性。擅长沟通协调，人际关系处理得当，是团队中的润滑剂。然有时过于依赖他人，缺乏决断力，需增强独立意识。富有艺术细胞和创造力，在需要细致耐心的领域表现突出。',
+    '丙':'日主丙火，如烈日当空，性格热情开朗，充满活力和感染力。丙火之人乐观积极，待人真诚，是天生的社交家和鼓舞者。做事充满激情，行动力强，不喜欢拖泥带水。具有强烈的正义感和责任心，敢于为弱者发声。然有时过于直率，容易冲动行事，需学会控制情绪。在人群中总是最耀眼的存在，领导能力出众，善于激励他人。适合需要表达力、创造力和影响力的职业方向。',
+    '丁':'日主丁火，如星火燎原，性格内敛而持久，心思敏锐，观察力极强。丁火之人不善张扬，但做事专注认真，追求精益求精。有强烈的目标意识，一旦确定方向便能持之以恒，默默耕耘直到成功。善于思考和分析，在细节中发现问题，在安静中积累力量。然有时过于谨慎，容易陷入完美主义，需学会适时放松。内心情感丰富但表达克制，是值得信赖的伙伴和顾问。',
+    '戊':'日主戊土，如厚土载物，性格稳重可靠，诚实守信，是众人眼中的"靠谱担当"。戊土之人做事踏实，不急不躁，有极强的耐心和毅力。为人忠厚老实，重视承诺，不喜浮夸虚伪。善于积累，无论是知识、财富还是人脉，都能日积月累、厚积薄发。然有时过于保守，缺乏创新精神，需保持对新事物的好奇心。在需要稳定性、可靠性的领域表现卓越，是团队中最值得信赖的基石成员。',
+    '己':'日主己土，如田园沃土，性格温和包容，善解人意，有极强的生活智慧。己土之人谦逊务实，注重细节，善于精打细算和资源管理。为人低调不张扬，但做事有条不紊，效率很高。有很好的合作精神，能够包容不同性格的人，是优秀的团队协作者。然有时过于随和，缺乏原则性，需学会适当坚持。天生具有理财天赋和审美品味，在需要精细管理的领域发挥出色。',
+    '庚':'日主庚金，如刀剑锋利，性格果断刚强，不惧挑战，有强烈的正义感和原则性。庚金之人做事雷厉风行，不拖泥带水，遇到困难反而愈战愈勇。为人正直，不喜虚伪做作，说话办事直截了当。具有改革精神和创新勇气，敢于打破常规，开创新局面。然有时过于刚硬，容易得罪人，需学会柔和处事。在需要决断力、执行力的领域如法律、管理、技术等方向表现卓越。',
+    '辛':'日主辛金，如美玉精金，性格精致优雅，追求完美，有出众的审美和品味。辛金之人自律严谨，做事精益求精，注重形象和品质。为人有分寸感，不轻易表露内心，但内心世界丰富多彩。有极强的自我要求，不断追求进步和提升。然有时过于挑剔，对自己和他人都要求过高，需学会包容不完美。天生具有艺术鉴赏力和时尚敏感度，在需要品味和品质的领域大放异彩。',
+    '壬':'日主壬水，如江河奔流，性格智慧通达，胸怀宽广，有远见卓识。壬水之人思维活跃，视野开阔，善于接受新事物，具有国际化的眼光。为人豁达大度，不拘小节，有容人之量和领袖气度。天生好奇心强，学识渊博，融会贯通各领域知识。然有时过于天马行空，缺乏执行细节，需配实干型搭档。适合学术研究、国际交流、科技创新等需要开阔视野的事业方向。',
+    '癸':'日主癸水，如雨露滋润，性格润物无声，直觉敏锐，有深邃的洞察力和想象力。癸水之人看似低调温和，实则内心世界极为丰富，善于感知他人情绪和事物本质。有极强的创造力和灵感，适合从事需要想象力的工作。为人细腻体贴，善于默默关心他人，但心思敏感容易受影响。然有时过于内向，不善表达，需锻炼外显能力。在艺术创作、心理咨询、战略规划等领域有独特天赋。'
+  };
+  var personalityDesc=personalityDescMap[dayGan]||personalityDescMap['戊'];
+  // 职业发展解读（400字左右）
+  var careerPathMap={
+    '甲':'甲木日主之人，职业发展宜向上生长、不断突破。天生具有领导才能和大局观，适合管理岗位和创业方向。在职业选择上，宜选择能发挥组织协调能力的领域，如企业管理、项目管理、教育培训等。甲木需金来修剪，因此在职业生涯中需要适当的规范和制度约束，避免过于理想化。建议从基层做起积累经验，逐步向管理层发展。结合选科方向，甲木之人在理工科领域可向工程管理方向发展，在文科领域可向行政管理和公共事务发展。职业生涯高峰期多在中年，需保持耐心，厚积薄发。',
+    '乙':'乙木日主之人，职业发展宜柔中求进、顺势而为。天生具有良好的适应力和协调能力，适合需要沟通协作的岗位，如人力资源、公关、咨询、教育等。乙木需依附生长，因此在团队中能发挥最大价值，适合成为优秀的二号人物或专家型人才。建议建立稳固的职业关系网络，善于借助平台和资源。结合选科方向，乙木之人在理工科领域可向项目管理、产品设计方向发展，在文科领域可向教育、心理学、社会工作发展。职业发展稳中求进，不宜过于激进，一步步扎实前进。',
+    '丙':'丙火日主之人，职业发展宜发光发热、影响他人。天生具有领导魅力和感染力，适合需要表达力和影响力的岗位，如演讲、培训、销售、传媒、演艺等。丙火需水来调节，避免过度燃烧，因此需注意劳逸结合，保持可持续的工作节奏。建议充分发挥社交网络的优势，在与人打交道的领域大展拳脚。结合选科方向，丙火之人在理工科领域可向产品经理、技术推广方向发展，在文科领域可向新闻传播、市场营销发展。职业成就往往通过影响力来衡量。',
+    '丁':'丁火日主之人，职业发展宜持之以恒、深耕细作。天生具有专注力和钻研精神，适合需要深度和专业性的岗位，如科研、技术研发、数据分析、审计、编辑等。丁火虽不耀眼但持久温暖，适合成为行业专家和技术骨干。建议选择一个方向深耕下去，不追求广度而追求深度。结合选科方向，丁火之人在理工科领域可向算法工程师、科研人员发展，在文科领域可向编辑、档案管理、政策研究发展。职业成就是日积月累的结果，慢工出细活。',
+    '戊':'戊土日主之人，职业发展宜稳扎稳打、厚积薄发。天生具有稳定性和可靠性，适合需要耐心和持续投入的岗位，如工程管理、财务管理、资产管理、运营管理、农业等。戊土为万物之基，适合成为团队的中流砥柱。建议注重长期规划和资产积累，不急功近利。结合选科方向，戊土之人在理工科领域可向土木工程、地质勘探方向发展，在文科领域可向财务管理、行政后勤发展。职业发展的关键在于持续积累，十年磨一剑，一朝亮锋芒。',
+    '己':'己土日主之人，职业发展宜精耕细作、发挥特长。天生具有精细化管理能力和务实精神，适合需要细致和耐心的岗位，如会计、设计、手工艺、营养师、教育等。己土之人善于将复杂的事情变得有序，适合成为优秀的执行者和管理者。建议发挥自己的细节把控能力，在精细化的领域建立专业壁垒。结合选科方向，己土之人在理工科领域可向精工制造、质量检测方向发展，在文科领域可向设计、教育培训发展。职业成就在于将小事做到极致。',
+    '庚':'庚金日主之人，职业发展宜披荆斩棘、开创新局。天生具有决断力和执行力，适合需要魄力和勇气的岗位，如法官、律师、高管、创业、军事、安全等。庚金锐利敢为，适合成为变革者和开创者。建议在需要改革和突破的领域发挥所长，不怕挑战和竞争。结合选科方向，庚金之人在理工科领域可向机械制造、国防科技发展，在文科领域可向法律、管理咨询发展。职业发展路径通常充满挑战但回报丰厚，适合走少有人走的路。',
+    '辛':'辛金日主之人，职业发展宜精益求精、追求卓越。天生具有审美能力和品质意识，适合需要品味和专业知识的工作，如珠宝鉴定、时装设计、艺术创作、品牌管理、奢侈品行业等。辛金之人追求完美，适合成为行业标准制定者和品味引领者。建议在需要高水准专业度的领域建立自己的品牌和口碑。结合选科方向，辛金之人在理工科领域可向精密仪器、材料科学方向发展，在文科领域可向艺术管理、时尚媒体发展。职业成就体现在品质和品味上。',
+    '壬':'壬水日主之人，职业发展宜海纳百川、融会贯通。天生具有开阔视野和整合能力，适合需要宏观思维和跨领域知识的岗位，如战略规划、国际贸易、学术研究、跨文化交流等。壬水通海，格局宏大，适合从事能连接不同领域和人群的工作。建议持续学习、拓展知识边界，做T型人才——既广又深。结合选科方向，壬水之人在理工科领域可向数据科学、系统架构方向发展，在文科领域可向国际关系、文化产业管理发展。职业发展空间广阔，宜树立远大目标。',
+    '癸':'癸水日主之人，职业发展宜润物无声、以柔克刚。天生具有敏锐直觉和创造力，适合需要灵感和洞察力的岗位，如心理咨询师、作家、研究员、战略分析师、设计师等。癸水无形却能渗透一切，适合在幕后发挥影响力，成为智囊型人才。建议发挥自己的灵性和创造力，选择能独立思考的工作环境。结合选科方向，癸水之人在理工科领域可向人工智能研究、密码学方向发展，在文科领域可向心理学、文学创作发展。职业价值的实现往往在于创造力和洞察力的释放。'
+  };
+  var careerPath=careerPathMap[dayGan]||careerPathMap['戊'];
+  // 人生发展建议（400字左右）
+  var dayZhiWx=zhiWuxing[dayZhi]||'土';
+  var lifeGuidanceMap={
+    '甲':'甲木参天，日柱坐'+dayZhi+'（属'+dayZhiWx+'），人生发展宜如大树般扎根深厚、枝繁叶茂。早年需扎实积累，打好基础；中年可大胆开拓，展翅高飞；晚年功成名就，福荫后人。人生关键转折期多在30-40岁，需把握机遇果断前行。情感方面需寻找能理解甲木胸怀的伴侣，互相扶持成长。健康方面宜多运动，注意肝胆保养，保持积极心态。整体运势如登山，越向上视野越开阔，贵人多在事业转折点出现。宜以仁者之心待人接物，以勇者之心直面挑战，以智者之心规划人生。五行上'+dayZhiWx+'为甲木提供'+dayZhiWx+'的支撑，需根据'+dayZhiWx+'的强弱来调整发展节奏。',
+    '乙':'乙木柔韧，日柱坐'+dayZhi+'（属'+dayZhiWx+'），人生发展宜如水般顺势而为、以柔克刚。早年需学习适应，寻找适合自己的平台；中年在稳定的环境中逐步上升；晚年生活温馨安详。人生中贵人多在合作中产生，善于借助外力是成功关键。情感方面需寻找能给予安全感和支持的伴侣，家庭是重要后盾。健康方面宜注意情绪管理，避免过度思虑，培养运动习惯。整体运势如溪流，虽不如江河壮阔但源远流长。宜以柔韧之心应对变化，以谦逊之心待人处世，以坚持之心追逐梦想。',
+    '丙':'丙火如阳，日柱坐'+dayZhi+'（属'+dayZhiWx+'），人生发展宜如火般温暖明亮、照亮四方。早年多有历练，在与人交往中积累经验和人脉；中年光芒四射，事业如日中天；晚年受人尊敬，声望斐然。人生贵人多为志同道合的朋友和欣赏你的前辈。情感方面需寻找能理解丙火热情的伴侣，共享人生精彩。健康方面宜注意心血管保养，适时放缓节奏，避免过度消耗。整体运势如旭日，充满了向上的力量。宜以热情之心拥抱生活，以温暖之心善待他人，以光明之心追求理想。',
+    '丁':'丁火如星，日柱坐'+dayZhi+'（属'+dayZhiWx+'），人生发展宜如星光般持续闪烁、照亮一方。早年可能不显山露水，但在持续努力中积累功力；中年逐渐发光发热，成为领域内的中坚力量；晚年智慧通达，受人敬重。人生贵人多为导师和同行前辈，善学多思者进步更快。情感方面需寻找能理解内敛性格的伴侣，平淡中见真情。健康方面宜注意作息规律，保护视力，适度社交。整体运势如长明灯，不求一时之亮但求长久之明。宜以专注之心投入事业，以沉稳之心应对挑战，以恒心追求卓越。',
+    '戊':'戊土如大地，日柱坐'+dayZhi+'（属'+dayZhiWx+'），人生发展宜如大地般承载万物、稳重前行。早年需打下坚实根基，不要急于求成；中年事业稳步上升，成为众人依靠的对象；晚年根基牢固，安稳富足。人生贵人多为务实派的长辈和合作伙伴。情感方面需寻找能理解稳重性格的伴侣，共同经营生活。健康方面宜注意脾胃保养，规律饮食，保持适度运动。整体运势如高山，虽上升缓慢但根基稳固。宜以诚信之心立身，以务实之心做事，以宽广之心待人。',
+    '己':'己土如田园，日柱坐'+dayZhi+'（属'+dayZhiWx+'），人生发展宜如良田般精耕细作、收获丰盈。早年需在细节中积累，在平凡中磨练；中年家庭和事业渐入佳境；晚年生活富足安逸。人生贵人多为赏识你细致和靠谱品质的人。情感方面需寻找能欣赏细腻性格的伴侣，共建温馨家庭。健康方面宜注意消化系统和皮肤保养，保持愉快心情。整体运势如良田，一分耕耘一分收获。宜以细腻之心经营生活，以务实之心规划未来，以温柔之心对待身边人。',
+    '庚':'庚金如宝剑，日柱坐'+dayZhi+'（属'+dayZhiWx+'），人生发展宜如利剑般锋芒毕露、开天辟地。早年多有挑战和磨炼，每一次考验都是成器的火候；中年能力趋于成熟，事业取得突破性进展；晚年威德并重，受人仰望。人生贵人多在竞争和挑战中出现，对手也是贵人。情感方面需寻找能理解刚毅性格的伴侣，互相砥砺成长。健康方面宜注意肺部保养，管理压力，避免过度劳累。整体运势如战场，强者愈强。宜以决断之心面对选择，以勇毅之心突破困境，以公正之心立身处世。',
+    '辛':'辛金如美玉，日柱坐'+dayZhi+'（属'+dayZhiWx+'），人生发展宜如宝石般经过打磨后璀璨夺目。早年需不断学习和打磨，提升专业素养和品味；中年技艺精湛，成为行业标杆；晚年品位卓越，生活优雅。人生贵人多为欣赏你专业和品味的人士。情感方面需寻找能理解完美主义性格的伴侣，互相欣赏互相包容。健康方面宜注意呼吸道保养，保持生活品质，修身养性。整体运势如玉石雕琢，越到后来越精致。宜以匠心精神投入事业，以品味的眼光看待人生，以自律的生活提升自我。',
+    '壬':'壬水如江海，日柱坐'+dayZhi+'（属'+dayZhiWx+'），人生发展宜如大海般宽广深远、容纳百川。早年需广泛学习、开阔眼界；中年事业格局宏大，纵横驰骋；晚年学识渊博，桃李满园。人生贵人来自五湖四海，善交游者机会更多。情感方面需寻找能理解宽广胸怀的伴侣，互相成就。健康方面宜注意肾脏保养，适度运动，保持心态开放。整体运势如远航，有风平浪静也有惊涛骇浪，但终将到达远方。宜以开放之心拥抱世界，以包容之心汇聚资源，以远见之心规划未来。',
+    '癸':'癸水如雨露，日柱坐'+dayZhi+'（属'+dayZhiWx+'），人生发展宜如春雨般润物无声、滋养万物。早年需在安静中积累智慧，在独处中酝酿灵感；中年创造力和洞察力达到巅峰，在专业领域大放异彩；晚年智慧深邃，成为一代大家。人生贵人多为被你的智慧和创意打动的人。情感方面需寻找能理解细腻内心的伴侣，精神共鸣比物质更加重要。健康方面宜注意肾脏和内分泌保养，保持良好作息，注重心灵滋养。整体运势如涓涓细流，最终汇入智慧之海。宜以敏锐之心感知世界，以创造之心表达自我，以宁静之心面对纷扰。'
+  };
+  var lifeGuidance=lifeGuidanceMap[dayGan]||lifeGuidanceMap['戊'];
+  // 学业规划建议（300字左右）
+  var studyAdviceMap={
+    '甲':'甲木日主之人在学业上有强烈的进取心和学习热情，但需注意学习方法的优化。建议采用模块化学习方式，将大的学习目标分解为阶段性任务，逐个击破。课堂上宜积极参与讨论，发挥领导才能，带动学习小组。甲木之人理解力强是大优势，但有时过于追求速度，需放慢脚步扎实掌握基础概念。适合选择需要逻辑思维和创新能力的学科，结合选科方向制定长期的学业规划。考前复习建议用思维导图梳理知识体系，善用输出倒逼输入。课外活动建议参加辩论、竞赛和创业实践，锻炼综合能力。',
+    '乙':'乙木日主之人在学业上适应力强，善于利用各种资源进行学习，但需增强学习的主动性和计划性。建议制定详细的学习计划，将大目标细化到每一天，培养自律习惯。课堂上宜认真听讲做笔记，课后善于总结整理。乙木之人善于理解他人视角，可以组建学习互助小组，在交流中加深理解。适合选择需要细致和耐心的学科，结合选科方向稳步推进。考前复习宜整理错题本和知识卡片，反复巩固薄弱环节。课外活动建议参加志愿服务和社会实践，培养沟通和领导能力。',
+    '丙':'丙火日主之人在学业上充满热情和求知欲，学习效率高，但需增强学习的持续性和深度。建议采用项目式学习方法，将学习内容与实际项目相结合，激发内在动力。课堂上宜主动发言和提问，通过表达来加深理解。丙木之人学得快是优势，但有时缺乏深入研究的耐心，需刻意培养专注力。适合选择需要创造力和表达能力的学科。考前复习宜采用费曼学习法，用输出检验输入。课外活动建议参加演讲、辩论和文艺活动，释放表达能量。',
+    '丁':'丁火日主之人在学业中表现出色，专注力极强，善于深度学习和研究型学习。建议选择感兴趣的领域深耕细作，做专做精。课堂上宜做好笔记和总结，课后善于独立思考。丁火之人自学能力强，可以充分利用网络资源和图书馆，进行超前学习和拓展学习。适合选择需要深度思考和分析能力的学科。考前复习宜建立完整的知识框架，注重理解而非死记硬背。课外活动建议参加科研小组、学术竞赛和编程活动，发挥钻研精神的优势。',
+    '戊':'戊土日主之人在学业上踏实稳健，学习态度认真，善于循序渐进地掌握知识。建议采用长期规划策略，将学业目标与职业规划结合，有方向地学习。课堂上宜认真听讲做好笔记，课后坚持每日复习。戊土之人理解速度可能不是最快，但持久力是最大优势，适合长期积淀。考前复习宜提前准备，反复巩固，不留知识死角。课外活动建议参加团队项目和集体活动，锻炼组织协调能力。学业成功的关键在于一个字：恒。',
+    '己':'己土日主之人在学业上细心专注，善于将知识系统化和条理化，学习效率稳定。建议建立个人知识管理体系，用笔记、思维导图和知识库来整理所学。课堂上宜认真做笔记，课后及时整理和归纳。己土之人善于精打细算，可以合理分配学习时间，各科均衡发展。适合选择需要细节把控能力的学科。考前复习宜用列表和卡片进行系统化复习，查漏补缺。课外活动建议参加手工、设计、书法等需要耐心的活动，培养专注力。',
+    '庚':'庚金日主之人在学业中表现出色，具有强烈的求知欲和竞争力。庚金之人在学习上不惧挑战，遇到困难反而越挫越勇，喜欢攻克难题。建议多参加学科竞赛和拔尖项目，在竞争中激发潜能。课堂上宜积极发言和质疑，通过思辨来加深理解。庚金之人逻辑思维强是优势，但有时过于固执己见，需学会听取不同观点。适合选择需要推理和分析能力的学科，如数学、物理、计算机等。考前复习宜刷题练习，实战模拟。课外活动建议参加竞赛、辩论、体育竞技等活动。',
+    '辛':'辛金日主之人在学业中追求完美，学习态度严谨认真，擅长精细化学习和技能型学习。建议在学业上选择一个方向做精深，做行业顶尖人才。课堂上宜认真记录和分析，善于发现细节问题。辛金之人审美能力强，可以在学习资料和笔记的美化中加深记忆。适合选择需要精准度和审美力的学科。考前复习宜精益求精，反复打磨，不留遗憾。课外活动建议参加艺术创作、设计比赛和技能竞赛，将学业与兴趣结合。',
+    '壬':'壬水日主之人在学业中表现出极强的学习能力和广博的兴趣，善于跨领域学习和通识教育。建议采用"T型"学习策略——一个方向深入，多个方向拓展，保持知识面的广度。课堂上宜做好联想笔记，将新知识与已有知识建立连接。壬水之人博闻强识是优势，但有时容易贪多嚼不烂，需选择一个核心方向持续深入。适合选择交叉学科和新兴领域。考前复习宜用知识图谱法，构建全局知识体系。课外活动建议参加模联、国际交流、跨学科项目等开阔视野。',
+    '癸':'癸水日主之人在学业中富有创造力和直觉力，善于发现事物的本质和规律，学习方式独特。建议尊重自己的学习节奏和风格，不拘泥于常规方法。课堂上宜静心体悟，抓住核心要义，不必追求面面俱到。癸水之人灵感丰富是优势，但有时缺乏持续行动力，需建立学习习惯来支持灵感的落地。适合选择需要创造力和洞察力的学科，如文学、艺术、哲学、心理学等。考前复习宜用自己的理解来重新组织知识，形成独特的知识体系。课外活动建议参加创意写作、艺术创作和哲学讨论等活动。'
+  };
+  var studyAdvice=studyAdviceMap[dayGan]||studyAdviceMap['戊'];
+  // 命理解析总结（200字左右）
+  var fortuneSummaryMap={
+    '甲':'日主甲木，命格中正刚健，有栋梁之材。八字'+bazi.year+' '+bazi.month+' '+bazi.day+' '+bazi.hour+'，五行配比中'+dominantWx+'气最盛。命主心性正直、胸怀大志，行事有魄力、有担当。学业和事业宜借木之生长之势不断向上突破，善用仁爱之心广结善缘。需注意在刚愎之时以柔克刚，在激进之时稳中求进。五行平衡之道，在于'+dominantWx+'与其他元素的相生相济。',
+    '乙':'日主乙木，命格柔韧灵秀，有藤萝之姿。八字'+bazi.year+' '+bazi.month+' '+bazi.day+' '+bazi.hour+'，五行配比中'+dominantWx+'气最盛。命主心性温和、适应力强，善借势生长，柔中带刚。学业和事业宜发挥协调之长，在团队中找到最佳位置，以合作促发展。需注意在随和之时坚持原则，在依附之时保持独立。五行平衡之道，在于'+dominantWx+'与其他元素的相辅相成。',
+    '丙':'日主丙火，命格光明热烈，有太阳之气。八字'+bazi.year+' '+bazi.month+' '+bazi.day+' '+bazi.hour+'，五行配比中'+dominantWx+'气最盛。命主心性热情、感染力强，天生具有领袖气质和进取精神。学业和事业宜发挥光芒，在需要影响力的领域大显身手。需注意在燃烧之时细心续航，在热切之时保持冷静。五行平衡之道，在于'+dominantWx+'与其他元素的升降调和。',
+    '丁':'日主丁火，命格星火璀璨，有燎原之势。八字'+bazi.year+' '+bazi.month+' '+bazi.day+' '+bazi.hour+'，五行配比中'+dominantWx+'气最盛。命主心性专注、谋定后动，善于在安静中积累力量，是典型的大器晚成型。学业和事业宜深入钻研，以专业壁垒立足。需注意在专注之时开阔视野，在谨慎之时勇敢尝试。五行平衡之道，在于'+dominantWx+'与其他元素的明暗相济。',
+    '戊':'日主戊土，命格厚重稳健，有大地之德。八字'+bazi.year+' '+bazi.month+' '+bazi.day+' '+bazi.hour+'，五行配比中'+dominantWx+'气最盛。命主心性诚信、脚踏实地，是最可靠的基石人才。学业和事业宜稳扎稳打，以长期积累建立不可替代的价值。需注意在稳重之时保持进取，在保守之时拥抱变化。五行平衡之道，在于'+dominantWx+'与其他元素的载物相成。',
+    '己':'日主己土，命格温润细腻，有沃土之质。八字'+bazi.year+' '+bazi.month+' '+bazi.day+' '+bazi.hour+'，五行配比中'+dominantWx+'气最盛。命主心性务实、善于经营，有化繁为简的管理才能。学业和事业宜精细化深耕，以细节把控能力成就卓越。需注意在精打细算之时放眼全局，在低调行事之时展示自我。五行平衡之道，在于'+dominantWx+'与其他元素的化育相成。',
+    '庚':'日主庚金，命格刚健锋锐，有刀剑之威。八字'+bazi.year+' '+bazi.month+' '+bazi.day+' '+bazi.hour+'，五行配比中'+dominantWx+'气最盛。命主心性果断、勇于变革，是天生的开创者和破局者。学业和事业宜大胆开拓，在需要勇气和魄力的领域大展拳脚。需注意在锋锐之时柔而不折，在决断之时三思后行。五行平衡之道，在于'+dominantWx+'与其他元素的煅炼调和。',
+    '辛':'日主辛金，命格精致华美，有珠宝之彩。八字'+bazi.year+' '+bazi.month+' '+bazi.day+' '+bazi.hour+'，五行配比中'+dominantWx+'气最盛。命主心性完美、追求卓越，是品质和品味的标杆。学业和事业宜精益求精，以专业精神和审美品味建立差异化优势。需注意在追求完美之时包容不完美，在精致之时不失大气。五行平衡之道，在于'+dominantWx+'与其他元素的琢磨相成。',
+    '壬':'日主壬水，命格智慧通达，有江河之量。八字'+bazi.year+' '+bazi.month+' '+bazi.day+' '+bazi.hour+'，五行配比中'+dominantWx+'气最盛。命主心性豁达、见识广博，是胸怀天下的战略型人才。学业和事业宜跨界融合，以宽广视野和整合能力引领趋势。需注意在通达之时聚焦重点，在宏观之时关注细节。五行平衡之道，在于'+dominantWx+'与其他元素的流通相济。',
+    '癸':'日主癸水，命格深邃隽永，有甘露之润。八字'+bazi.year+' '+bazi.month+' '+bazi.day+' '+bazi.hour+'，五行配比中'+dominantWx+'气最盛。命主心性灵秀、创造力强，有独特的内在智慧和审美世界。学业和事业宜以创造力和洞察力为核心竞争力，在需要灵感的领域绽放光彩。需注意在深邃之时与人沟通，在空灵之时落地实践。五行平衡之道，在于'+dominantWx+'与其他元素的润泽相通。'
+  };
+  var fortuneSummary=fortuneSummaryMap[dayGan]||fortuneSummaryMap['戊'];
+  // 适配行业列表（3-5个行业）
+  var compatibleIndustriesMap={
+    '甲':[{name:'教育培训',reason:'甲木有教化之德，教育行业能充分发挥其引领和培育才能'},{name:'建筑地产',reason:'甲木参天与建筑行业有天然呼应，土木相生利于发展'},{name:'企业管理',reason:'甲木有统帅之才，管理岗能最大化其组织和决策优势'},{name:'农林生态',reason:'甲木之本在自然，农林水利领域与命格五行高度契合'}],
+    '乙':[{name:'文化传媒',reason:'乙木有审美之才，文化创意和传媒行业为其天赋领域'},{name:'公关咨询',reason:'乙木善于沟通协调，公关咨询行业是施展才华的舞台'},{name:'设计艺术',reason:'乙木柔韧灵动，设计领域能发挥其创造力和审美力'},{name:'教育辅导',reason:'乙木耐心细致，教育辅导行业能发挥其用心育人的特质'},{name:'社会工作',reason:'乙木富有同理心，社会服务和公益事业能最大化其温暖力量'}],
+    '丙':[{name:'传媒娱乐',reason:'丙火光明热烈，传媒和娱乐行业能最大程度发挥其感染力和影响力'},{name:'教育培训',reason:'丙火有教化之功，教育行业是其发光发热的理想舞台'},{name:'市场营销',reason:'丙火的热情和感染力在市场营销领域有天然优势'},{name:'公益组织',reason:'丙火心系天下，公益和慈善事业能发挥其温暖人心的特质'},{name:'文化艺术',reason:'丙火的创造力和表现力在文化艺术领域大有可为'}],
+    '丁':[{name:'科学研究',reason:'丁火专注持久，科研领域能发挥其深度钻研的优势'},{name:'数据分析',reason:'丁火善于洞察细微，数据分析行业能发挥其敏锐的观察力'},{name:'编辑出版',reason:'丁火精益求精，编辑出版行业适合其追求完美的性格'},{name:'网络安全',reason:'丁火隐而有力，网络和信息安全领域需要这种沉得住气的特质'}],
+    '戊':[{name:'建筑工程',reason:'戊土厚重稳健，土木工程和建筑行业是天命所归'},{name:'金融地产',reason:'戊土与不动产有天然渊源，金融地产行业是发挥所长的领域'},{name:'资源管理',reason:'戊土善于承载和管理，行政和资源管理是其优势所在'},{name:'农业食品',reason:'戊土厚德载物，农业和食品行业与命格五行完美呼应'}],
+    '己':[{name:'财务管理',reason:'己土精打细算，财务和资产管理行业能发挥其精细化管理才能'},{name:'教育辅导',reason:'己土耐心温和，教育行业是其发挥育人天赋的舞台'},{name:'医疗健康',reason:'己土滋养万物，医疗和健康领域需要这种细腻专注的人才'},{name:'手工艺',reason:'己土心灵手巧，手工艺和精细制作行业是其发挥特长的领域'}],
+    '庚':[{name:'法律司法',reason:'庚金刚正不阿，法律和司法行业是其施展正义的舞台'},{name:'机械制造',reason:'庚金与金属器械有天然联系，机械制造行业是天命领域'},{name:'军事国防',reason:'庚金锐利果敢，军事和国防领域能发挥其决断和执行力'},{name:'金融投资',reason:'庚金的决断力在金融投资领域有独特优势'},{name:'科技创新',reason:'庚金勇于变革，科技创新行业是其开创新局的理想之地'}],
+    '辛':[{name:'珠宝鉴藏',reason:'辛金精金美玉，珠宝和艺术品行业是其天赋领域'},{name:'时尚设计',reason:'辛金品味出众，时尚和设计行业能发挥其审美创造力'},{name:'精密制造',reason:'辛金精益求精，精密仪器和高端制造是其发挥专长的方向'},{name:'品牌管理',reason:'辛金有品牌意识，品牌管理和奢侈品行业能发挥其品味优势'}],
+    '壬':[{name:'国际商务',reason:'壬水胸怀宽广，国际贸易和跨国商务是其施展格局的平台'},{name:'学术研究',reason:'壬水学识渊博，高校和学术研究机构是其理想舞台'},{name:'互联网科技',reason:'壬水灵活变通，互联网和IT行业需要这种跨界融合能力'},{name:'文化创意',reason:'壬水想象力丰富，文化创意产业能发挥其融会贯通的特长'},{name:'环保水利',reason:'壬水与水利有天然联系，环保和水利行业是天命所归'}],
+    '癸':[{name:'心理咨询',reason:'癸水洞察人心，心理和精神健康行业是其天赋领域'},{name:'文学创作',reason:'癸水灵感丰富，文学和艺术创作能发挥其创造力'},{name:'人工智能',reason:'癸水深不可测，人工智能研究和探索需要这种深邃思维'},{name:'战略咨询',reason:'癸水善于洞察本质，战略规划和咨询行业是其智慧所长'},{name:'中医药学',reason:'癸水润泽万物，中医药和养生学与其命格五行有天然呼应'}]
+  };
+  var compInd=compatibleIndustriesMap[dayGan]||compatibleIndustriesMap['戊'];
+  // 五行平衡建议
+  var wxNames2=['金','木','水','火','土'];
+  var wxNeedMap={'金':[],'木':[],'水':[],'火':[],'土':[]};
+  var wxBoostMap={'金':['金色、白色饰品','银饰、铜器','金属办公用品','西方吉利方位','秋季多做规划'],'木':['绿色植物','木质饰品','园林园艺','东方吉利方位','春季多做开拓'],'水':['蓝色黑色衣物','水族养鱼','流水装饰','北方吉利方位','冬季多学习充电'],'火':['红色饰品灯具','烛光冥想','电子科技产品','南方吉利方位','夏季多社交活动'],'土':['黄色棕色衣物','陶瓷玉石摆件','登山远足','中部方吉利','换季时节多反思总结']};
+  var wxWeak=[];
+  for(var wni=0;wni<wxNames2.length;wni++){
+    var wname=wxNames2[wni];
+    var wval=wc[wname]||0;
+    if(wval<=1) wxWeak.push(wname);
+  }
+  var wxStrong=[];
+  for(var wni2=0;wni2<wxNames2.length;wni2++){
+    var wname2=wxNames2[wni2];
+    var wval2=wc[wname2]||0;
+    if(wval2>=3) wxStrong.push(wname2);
+  }
+  var needElement=wxWeak.length>0?wxWeak[0]:wxNames2[0];
+  var boostItems=wxBoostMap[needElement]||wxBoostMap['土'];
+  var strongElement=wxStrong.length>0?wxStrong[0]:'土';
+  var elementBalance={needElement:needElement,needReason:'命局中'+needElement+'元素偏弱（仅'+(wc[needElement]||0)+'个），需适当补益以达五行平衡，中和命局',strongElement:strongElement,boostTips:boostItems.slice(0,4)};
+  return {bazi:bazi,wuxing:wuxing,traits:traits,majors:rankedMajors,gender:gender,subject:subjectName,birthDate:birthDate,birthTime:birthTime,name:name,wuxingDesc:wuxingDesc,personalityDesc:personalityDesc,careerPath:careerPath,lifeGuidance:lifeGuidance,studyAdvice:studyAdvice,fortuneSummary:fortuneSummary,compatibleIndustries:compInd,elementBalance:elementBalance};
 }
 
 function showFortuneResult(ov,result,name,birth,birthTime,gender){
@@ -1158,52 +1275,295 @@ function showFortuneDetail(modal,result,name,birth,birthTime,gender){
 
 function downloadFortuneReport(result,name,birth,birthTime,gender,selectedMajors){
   var wxColors={金:'#ffd700',木:'#4caf50',水:'#4a90d9',火:'#ff6b35',土:'#d4a574'};
-  var h='<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><title>生辰命理测专业报告</title><style>';
-  h+='body{font-family:"Microsoft YaHei","PingFang SC",sans-serif;background:linear-gradient(135deg,#0f0c29,#302b63,#24243e);color:#e0e0e0;min-height:100vh;padding:40px 20px}';
-  h+='.container{max-width:800px;margin:0 auto}h1{text-align:center;background:linear-gradient(135deg,#8b5cf6,#06b6d4);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-size:28px;margin-bottom:8px}';
-  h+='.sub{text-align:center;color:#999;font-size:13px;margin-bottom:30px}';
-  h+='.card{background:rgba(30,30,54,0.8);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:24px;margin-bottom:20px}';
-  h+='.card h2{font-size:18px;margin-bottom:16px;color:#8b5cf6}.bazi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}';
-  h+='.bazi-cell{background:rgba(0,0,0,0.3);border-radius:10px;padding:12px;text-align:center}.bazi-label{font-size:11px;color:#999;margin-bottom:4px}.bazi-val{font-size:20px;font-weight:700}';
-  h+='.wx-bar{margin-bottom:8px}.wx-label{display:flex;justify-content:space-between;font-size:13px;margin-bottom:3px}.wx-track{height:8px;background:rgba(255,255,255,0.1);border-radius:4px;overflow:hidden}.wx-fill{height:100%;border-radius:4px}';
-  h+='.traits{list-style:none;padding:0}.traits li{padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.04);padding-left:16px;position:relative}.traits li::before{content:"✦";position:absolute;left:0;color:#8b5cf6}';
-  h+='.major-item{background:rgba(0,0,0,0.2);border-radius:10px;padding:12px 16px;margin-bottom:8px;display:flex;align-items:center;gap:12px}';
-  h+='.major-rank{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#8b5cf6,#06b6d4);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0}';
-  h+='.major-info{flex:1}.major-name{font-weight:600;margin-bottom:2px}.major-reason{font-size:12px;color:#999}.major-score{color:#8b5cf6;font-weight:700;font-size:16px}';
-  h+='.footer{text-align:center;color:#555;font-size:11px;margin-top:30px}.summary{font-size:13px;color:#ccc;line-height:1.8}';
-  h+='</style></head><body><div class="container">';
-  h+='<h1>🔮 生辰命理测专业报告</h1>';
-  h+='<div class="sub">👤 '+esc(name)+' | 📅 '+esc(birth)+' | 🕐 '+esc(birthTime)+'时 | '+esc(gender)+' | 选科：'+esc(result.subject)+'</div>';
-  h+='<div class="card"><h2>📜 八字四柱</h2><div class="bazi-grid">';
-  var bl=['年柱','月柱','日柱','时柱'],bk=['year','month','day','hour'];
-  for(var i=0;i < bl.length;i++){ h+='<div class="bazi-cell"><div class="bazi-label">'+bl[i]+'</div><div class="bazi-val">'+result.bazi[bk[i]]+'</div></div>'; }
-  h+='</div></div>';
-  h+='<div class="card"><h2>☯ 五行分析</h2>';
-  for(var wi=0;wi < result.wuxing.length;wi++){
-    var wx=result.wuxing[wi];
-    h+='<div class="wx-bar"><div class="wx-label"><span>'+wx.name+'</span><span style="color:'+(wxColors[wx.name]||'#999')+'">'+wx.percent+'%</span></div><div class="wx-track"><div class="wx-fill" style="width:'+wx.percent+'%;background:'+(wxColors[wx.name]||'#999')+'"></div></div></div>';
-  }
-  h+='</div>';
-  h+='<div class="card"><h2>🔮 命理特质</h2><ul class="traits">';
-  for(var ti=0;ti < result.traits.length;ti++){ h+='<li>'+esc(result.traits[ti])+'</li>'; }
-  h+='</ul></div>';
-  h+='<div class="card"><h2>🎯 推荐专业</h2>';
-  for(var mj=0;mj < result.majors.length;mj++){
-    var m=result.majors[mj];
-    var sel=selectedMajors[m.name]?' ✓ 已选':'';
-    h+='<div class="major-item"><div class="major-rank">'+m.rank+'</div><div class="major-info"><div class="major-name">'+m.name+sel+'</div><div class="major-reason">'+esc(m.reason)+'</div></div><div class="major-score">'+m.score+'分</div></div>';
-  }
-  h+='</div>';
-  h+='<div class="card"><h2>💡 发展建议</h2><div class="summary">根据命理五行分析和专业适配度，建议优先选择适配度最高的专业方向。在大学期间，可根据命局喜用神选择辅修方向，扬长避短。同时建议在校期间多参与与所选专业相关的实践活动，将命理天赋转化为实际能力。</div></div>';
-  h+='<div class="footer">本报告由蜻蜓龙虾助手 · 命理分析功能生成 | 仅供娱乐参考</div>';
-  h+='</div></body></html>';
-  var b=new Blob(['\ufeff'+h],{type:'text/html;charset=UTF-8'});
-  var a=document.createElement('a');
-  a.href=URL.createObjectURL(b);
-  a.download='命理测专业报告_'+esc(name)+'_'+new Date().toISOString().slice(0,10)+'.html';
-  document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  toast('📥 报告已下载 ✓');
+  var wxEmoji={金:'⚜️',木:'🌿',水:'💧',火:'🔥',土:'🏔️'};
+
+  // 显示加载提示
+  var loadOv=document.createElement('div'); loadOv.className='modal-overlay'; loadOv.style.zIndex='9999';
+  loadOv.innerHTML='<div class="fortune-modal" style="max-width:400px;text-align:center;padding:40px"><div class="fl-spin" style="font-size:48px;margin-bottom:16px">🌀</div><div style="color:#8b5cf6;font-size:16px;font-weight:600;margin-bottom:8px">AI正在撰写报告...</div><div style="color:var(--sub);font-size:12px" id="report-status">正在调用DeepSeek大模型生成深度分析文章</div></div>';
+  document.body.appendChild(loadOv);
+
+  // 构造 LLM prompt
+  var baziStr=result.bazi.year+' '+result.bazi.month+' '+result.bazi.day+' '+result.bazi.hour;
+  var wuxingStr=result.wuxing.map(function(w){return w.name+w.percent+'%';}).join('、');
+  var majorsStr=result.majors.slice(0,5).map(function(m){return m.name;}).join('、');
+
+  var prompt='你是一位精通周易八字命理学的专家。请根据以下考生信息，撰写一份专业的命理分析报告。\n\n考生信息：\n- 姓名：'+name+'\n- 农历生日：'+birth+'（'+birthTime+'时）\n- 性别：'+gender+'\n- 选科：'+result.subject+'\n- 八字四柱：'+baziStr+'\n- 五行分布：'+wuxingStr+'\n- 命理特质：'+result.traits.join('；')+'\n- 推荐专业方向：'+majorsStr+'\n- 五行平衡建议（需补益元素）：'+result.elementBalance.needElement+'\n\n请以JSON格式返回以下四个部分（每部分300-500字，专业深度，文笔优美，有周易智慧）：\n\n{\n  "wuxingDeep": "一、五行命理深层解读（分析八字五行旺衰、日主特性、十神关系、用神喜忌，结合周易卦象和干支生克关系）",\n  "careerAnalysis": "二、职业发展方向分析（结合五行喜用神和选科，分析考生适合的职业领域、行业方向、团队角色、领导风格，引用周易「乾卦」「坤卦」等智慧）",\n  "lifeGuidance": "三、人生发展规划建议（从学业、事业、人际、健康四个维度给出建议，结合八字大运流年趋势，引用「天行健君子以自强不息」等经典）",\n  "fortuneWisdom": "四、命理总结与周易智慧（总结考生命局核心优势，给出终身发展核心建议，引用2-3句周易原文，点明人生主题）"\n}\n\n要求：\n1. 每部分300-500字，深度专业\n2. 文笔优美流畅，有文学性\n3. 结合周易经典原文（如乾卦、坤卦、谦卦等）\n4. 不要使用Markdown格式（不要#、**等标记）\n5. 四部分之间用\\n\\n---\\n\\n分隔\n6. 直接返回纯文本，不要JSON包装，不要代码块标记';
+
+  var dsKey=state.apiKey||'';
+  // 如果没有配置API Key，使用服务端调用
+  var useServer=!dsKey||dsKey.length<10;
+
+  (useServer?callFortuneServer(prompt):callDeepSeekDirect(prompt,dsKey)).then(function(llmText){
+    loadOv.remove();
+    // 解析LLM返回的四部分
+    var parts=llmText.split(/\n?\s*---\s*\n?/);
+    var llm={
+      wuxingDeep: (parts[0]||'').replace(/^.*?[：:]\s*/, '').trim(),
+      careerAnalysis: (parts[1]||'').replace(/^.*?[：:]\s*/, '').trim(),
+      lifeGuidance: (parts[2]||'').replace(/^.*?[：:]\s*/, '').trim(),
+      fortuneWisdom: (parts[3]||'').replace(/^.*?[：:]\s*/, '').trim()
+    };
+    // 如果LLM返回为空，使用本地备用内容
+    if(llm.wuxingDeep.length<50) llm.wuxingDeep=result.wuxingDesc||'';
+    if(llm.careerAnalysis.length<50) llm.careerAnalysis=result.careerPath||'';
+    if(llm.lifeGuidance.length<50) llm.lifeGuidance=result.lifeGuidance||'';
+    if(llm.fortuneWisdom.length<50) llm.fortuneWisdom=result.fortuneSummary||'';
+
+    buildAndPrintReport(result,name,birth,birthTime,gender,selectedMajors,llm,wxColors,wxEmoji);
+  }).catch(function(e){
+    loadOv.remove();
+    toast('⚠️ AI报告生成失败，使用本地模板报告');
+    var llm={
+      wuxingDeep: result.wuxingDesc||'',
+      careerAnalysis: result.careerPath||'',
+      lifeGuidance: result.lifeGuidance||'',
+      fortuneWisdom: result.fortuneSummary||''
+    };
+    buildAndPrintReport(result,name,birth,birthTime,gender,selectedMajors,llm,wxColors,wxEmoji);
+  });
 }
+
+function callFortuneServer(prompt){
+  return fetch(API+'/api/v1/chat',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','X-API-Key':state.apiKey||''},
+    body:JSON.stringify({user_id:'web_report',session_id:'report_'+Date.now(),question:prompt})
+  }).then(function(r){ return r.json(); }).then(function(d){ return d.answer||d.content||''; });
+}
+
+function callDeepSeekDirect(prompt,apiKey){
+  return fetch('https://api.deepseek.com/chat/completions',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey},
+    body:JSON.stringify({model:'deepseek-chat',messages:[{role:'user',content:prompt}],temperature:0.7,max_tokens:4096})
+  }).then(function(r){ return r.json(); }).then(function(d){
+    if(d.error) throw new Error(d.error.message||'API错误');
+    return (d.choices&&d.choices[0]&&d.choices[0].message&&d.choices[0].message.content)||'';
+  });
+}
+
+function buildAndPrintReport(result,name,birth,birthTime,gender,selectedMajors,llm,wxColors,wxEmoji){
+  var today=new Date().toLocaleDateString('zh-CN',{year:'numeric',month:'long',day:'numeric'});
+  var dominantWx='';
+  var maxPct=0;
+  for(var wi=0;wi<result.wuxing.length;wi++){ if(result.wuxing[wi].percent>maxPct){ maxPct=result.wuxing[wi].percent; dominantWx=result.wuxing[wi].name; } }
+
+  var R='<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><title>生辰命理测专业报告</title><style>';
+  // === 基础样式 ===
+  R+='*{margin:0;padding:0;box-sizing:border-box}';
+  R+='body{font-family:"PingFang SC","Microsoft YaHei","Noto Serif SC",serif;background:linear-gradient(135deg,#0f0c29 0%,#1a1040 30%,#302b63 60%,#24243e 100%);color:#e8e0f0;line-height:2;font-size:14px}';
+  R+='.page{width:210mm;min-height:297mm;padding:18mm 20mm;margin:0 auto;position:relative;overflow:hidden;page-break-after:always}';
+  R+='.page:last-child{page-break-after:auto}';
+  R+='.page::before{content:"";position:absolute;top:0;left:0;right:0;bottom:0;background:radial-gradient(ellipse at 30% 20%,rgba(139,92,246,0.08),transparent 60%),radial-gradient(ellipse at 70% 80%,rgba(6,182,212,0.06),transparent 60%);pointer-events:none}';
+  // 星空点缀
+  R+='.stars{position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none;overflow:hidden}';
+  R+='.star-dot{position:absolute;width:2px;height:2px;background:white;border-radius:50%;opacity:0.6}';
+  // 封面
+  R+='.cover{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;min-height:240mm;position:relative;z-index:1}';
+  R+='.cover-icon{font-size:64px;margin-bottom:20px;animation:pulse 2s ease-in-out infinite}';
+  R+='@keyframes pulse{0%,100%{opacity:0.7;transform:scale(1)}50%{opacity:1;transform:scale(1.1)}}';
+  R+='.cover h1{font-size:36px;font-weight:900;background:linear-gradient(135deg,#a78bfa,#06b6d4,#8b5cf6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:12px;letter-spacing:4px}';
+  R+='.cover .subtitle{font-size:16px;color:#a78bfa;margin-bottom:40px;letter-spacing:2px}';
+  R+='.cover .divider{width:180px;height:2px;background:linear-gradient(90deg,transparent,#8b5cf6,transparent);margin-bottom:40px}';
+  R+='.cover .info-grid{display:grid;grid-template-columns:auto auto;gap:12px 40px;text-align:left;font-size:14px}';
+  R+='.cover .info-grid .lbl{color:#999}';
+  R+='.cover .info-grid .val{color:#e0e0e0;font-weight:600}';
+  R+='.cover .date{color:#666;margin-top:60px;font-size:13px}';
+  R+='.cover .brand{margin-top:40px;color:#8b5cf6;font-size:15px;letter-spacing:2px;border:1px solid rgba(139,92,246,0.3);padding:10px 30px;border-radius:30px}';
+  // 章节标题
+  R+='.section{margin-bottom:32px;position:relative;z-index:1}';
+  R+='.section h2{font-size:22px;color:#a78bfa;margin-bottom:20px;padding-bottom:10px;border-bottom:2px solid rgba(139,92,246,0.2);display:flex;align-items:center;gap:10px}';
+  R+='.section h2 .s-icon{font-size:24px}';
+  R+='.section h3{font-size:16px;color:#c4b5fd;margin:16px 0 8px}';
+  R+='.section p,.section .content-text{font-size:14px;color:#ccc;line-height:2;text-align:justify;text-indent:2em;margin-bottom:12px}';
+  // 卡片
+  R+='.card{background:rgba(30,27,60,0.7);border:1px solid rgba(139,92,246,0.15);border-radius:14px;padding:20px;margin-bottom:16px}';
+  R+='.card h3{color:#c4b5fd;font-size:15px;margin-bottom:12px}';
+  // 八字
+  R+='.bazi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}';
+  R+='.bazi-cell{border:2px solid rgba(139,92,246,0.3);border-radius:12px;padding:14px 10px;text-align:center;background:rgba(0,0,0,0.2)}';
+  R+='.bazi-cell .bz-label{font-size:11px;color:#8b5cf6;margin-bottom:6px;letter-spacing:2px}';
+  R+='.bazi-cell .bz-val{font-size:22px;font-weight:800;letter-spacing:2px}';
+  R+='.bazi-cell .bz-detail{font-size:11px;color:#999;margin-top:4px}';
+  // 五行
+  R+='.wx-item{margin-bottom:10px}';
+  R+='.wx-item .wx-header{display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;align-items:center}';
+  R+='.wx-item .wx-bar{height:8px;background:rgba(255,255,255,0.08);border-radius:4px;overflow:hidden}';
+  R+='.wx-item .wx-fill{height:100%;border-radius:4px;transition:width 1s ease}';
+  // 专业
+  R+='.major-item{display:flex;align-items:center;gap:12px;padding:10px 14px;background:rgba(0,0,0,0.2);border-radius:10px;margin-bottom:8px;border-left:3px solid transparent}';
+  R+='.major-item:nth-child(1){border-left-color:#ffd700}';
+  R+='.major-item:nth-child(2){border-left-color:#c0c0c0}';
+  R+='.major-item:nth-child(3){border-left-color:#cd7f32}';
+  R+='.major-rank-num{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#8b5cf6,#06b6d4);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}';
+  R+='.major-info{flex:1}.major-name{font-weight:600;font-size:14px}.major-reason{font-size:12px;color:#999;margin-top:2px}';
+  R+='.major-score-bar{flex:0 0 160px}';
+  R+='.major-score-bar .msb-track{height:4px;background:rgba(255,255,255,0.1);border-radius:2px;overflow:hidden;margin-bottom:2px}';
+  R+='.major-score-bar .msb-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,#8b5cf6,#06b6d4)}';
+  R+='.major-score-bar .msb-text{font-size:11px;color:#8b5cf6;text-align:right}';
+  // 行业标签
+  R+='.industry-tags{display:flex;flex-wrap:wrap;gap:8px}';
+  R+='.industry-tag{background:rgba(139,92,246,0.15);border:1px solid rgba(139,92,246,0.3);border-radius:20px;padding:4px 14px;font-size:12px;color:#c4b5fd}';
+  // 建议列表
+  R+='.advice-list{list-style:none}';
+  R+='.advice-list li{padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04);padding-left:20px;position:relative;font-size:13px;color:#ccc}';
+  R+='.advice-list li::before{content:"✦";position:absolute;left:0;color:#8b5cf6;font-size:11px}';
+  // 引用
+  R+='.quote{background:rgba(139,92,246,0.08);border-left:3px solid #8b5cf6;padding:14px 18px;margin:16px 0;font-style:italic;color:#c4b5fd;font-size:13px;border-radius:0 8px 8px 0}';
+  // 页脚
+  R+='.page-footer{text-align:center;color:#555;font-size:11px;margin-top:40px;padding-top:20px;border-top:1px solid rgba(255,255,255,0.05)}';
+  R+='.page-footer .disclaimer{color:#666;font-size:10px;margin-top:8px}';
+  // 覆盖装饰线
+  R+='.section-divider{width:60px;height:3px;background:linear-gradient(90deg,#8b5cf6,transparent);margin:20px 0}';
+  // @media print
+  R+='@media print{';
+  R+='  body{background:#fff!important;color:#222!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}';
+  R+='  .page{width:100%;min-height:auto;padding:12mm 15mm;box-shadow:none;page-break-after:always;background:#fff!important}';
+  R+='  .page:last-child{page-break-after:auto}';
+  R+='  .page::before{display:none}';
+  R+='  .cover h1{-webkit-text-fill-color:#5b21b6!important}';
+  R+='  .cover .subtitle{color:#7c3aed!important}';
+  R+='  .section h2{color:#5b21b6!important}';
+  R+='  .section h3{color:#7c3aed!important}';
+  R+='  .section p,.section .content-text{color:#333!important}';
+  R+='  .card{background:#f8f6ff!important;border-color:#e0d8f0!important}';
+  R+='  .bazi-cell{border-color:#c4b5fd!important;background:#faf8ff!important}';
+  R+='  .bazi-cell .bz-val{color:#5b21b6!important}';
+  R+='  .bazi-cell .bz-detail{color:#666!important}';
+  R+='  .industry-tag{background:#ede9fe!important;border-color:#c4b5fd!important;color:#5b21b6!important}';
+  R+='  .quote{background:#f5f3ff!important;color:#5b21b6!important}';
+  R+='  .page-footer{color:#999!important}';
+  R+='  .major-item{background:#faf8ff!important}';
+  R+='  .advice-list li{color:#333!important}';
+  R+='  .cover .brand{border-color:#c4b5fd!important;color:#5b21b6!important}';
+  R+='  .cover .divider{background:linear-gradient(90deg,transparent,#8b5cf6,transparent)!important}';
+  R+='  .stars{opacity:0.3}';
+  R+='}';
+  R+='@page{size:A4;margin:0}';
+  R+=genStarsCss(40);
+  R+='<' + '/style></head><body>';
+
+  // ====== 第1页：封面 ======
+  R+='<div class="page"><div class="stars">'+genStarsHtml(40)+'</div><div class="cover">';
+  R+='<div class="cover-icon">🔮</div>';
+  R+='<h1>生辰命理测专业报告</h1>';
+  R+='<p class="subtitle">基于周易八字五行的人生规划指南</p>';
+  R+='<div class="divider"></div>';
+  R+='<div class="info-grid">';
+  R+='<span class="lbl">姓　　名</span><span class="val">'+esc(name)+'</span>';
+  R+='<span class="lbl">农历生日</span><span class="val">'+esc(birth)+'</span>';
+  R+='<span class="lbl">出生时辰</span><span class="val">'+esc(birthTime)+'时</span>';
+  R+='<span class="lbl">性　　别</span><span class="val">'+esc(gender)+'</span>';
+  R+='<span class="lbl">选　　科</span><span class="val">'+esc(result.subject)+'</span>';
+  R+='<span class="lbl">命局主导</span><span class="val">'+dominantWx+'行旺相</span>';
+  R+='</div>';
+  R+='<p class="date">报告日期：'+today+'</p>';
+  R+='<div class="brand">🦞 蜻蜓龙虾助手 · AI命理分析</div>';
+  R+='</div></div>';
+
+  // ====== 第2页：八字命盘 + 五行分析 ======
+  R+='<div class="page"><div class="stars">'+genStarsHtml(25)+'</div>';
+  R+='<div class="section"><h2><span class="s-icon">📜</span>八字命盘</h2>';
+  R+='<div class="bazi-row">';
+  var bzLabels=['年柱','月柱','日柱','时柱'],bzKeys=['year','month','day','hour'];
+  var bzDetail=['根基·祖业','运势·父母','自身·配偶','归宿·子女'];
+  for(var bi=0;bi<4;bi++){ R+='<div class="bazi-cell"><div class="bz-label">'+bzLabels[bi]+'</div><div class="bz-val">'+result.bazi[bzKeys[bi]]+'</div><div class="bz-detail">'+bzDetail[bi]+'</div></div>'; }
+  R+='</div>';
+  R+='<div class="card"><p class="content-text" style="text-indent:0">八字四柱年'+result.bazi.year+'、月'+result.bazi.month+'、日'+result.bazi.day+'、时'+result.bazi.hour+'，构成了考生完整的命理体系。日柱为命主自身，其天干决定了日主五行属性，是命理分析的核心出发点。</p></div>';
+  R+='</div>';
+
+  R+='<div class="section"><h2><span class="s-icon">☯</span>五行分析</h2>';
+  for(var wxIdx=0;wxIdx<result.wuxing.length;wxIdx++){ var wx=result.wuxing[wxIdx]; R+='<div class="wx-item"><div class="wx-header"><span>'+wxEmoji[wx.name]+' '+wx.name+'</span><span style="color:'+(wxColors[wx.name]||'#999')+'">'+wx.percent+'%</span></div><div class="wx-bar"><div class="wx-fill" style="width:'+wx.percent+'%;background:'+(wxColors[wx.name]||'#999')+'"></div></div></div>'; }
+  R+='<div class="card" style="margin-top:12px"><p class="content-text">'+esc(llm.wuxingDeep.substring(0,200)||result.wuxingDesc||'')+'</p></div>';
+  R+='</div>';
+  R+='</div>';
+
+  // ====== 第3页：命理深度解读 ======
+  R+='<div class="page"><div class="stars">'+genStarsHtml(20)+'</div>';
+  R+='<div class="section"><h2><span class="s-icon">🔍</span>五行命理深层解读</h2>';
+  R+='<div class="content-text">'+esc(llm.wuxingDeep||result.wuxingDesc||'')+'</div>';
+  R+='</div>';
+  R+='<div class="section"><h2><span class="s-icon">🧬</span>命理特质分析</h2>';
+  R+='<ul class="advice-list">';
+  for(var ti2=0;ti2<result.traits.length;ti2++){ R+='<li>'+esc(result.traits[ti2])+'</li>'; }
+  R+='</ul></div>';
+  R+='<div class="section"><h2><span class="s-icon">⚖️</span>五行平衡建议</h2>';
+  R+='<div class="card"><p class="content-text">需补益元素：<b style="color:'+(wxColors[result.elementBalance.needElement]||'#999')+'">'+result.elementBalance.needElement+'</b>。'+esc(result.elementBalance.needReason)+'</p>';
+  R+='<p style="color:#c4b5fd;font-size:13px;margin-top:8px">补益方式：'+result.elementBalance.boostTips.join('、')+'</p></div>';
+  R+='</div>';
+  R+='</div>';
+
+  // ====== 第4页：职业发展 + 推荐专业 ======
+  R+='<div class="page"><div class="stars">'+genStarsHtml(20)+'</div>';
+  R+='<div class="section"><h2><span class="s-icon">💼</span>职业发展方向分析</h2>';
+  R+='<div class="content-text">'+esc(llm.careerAnalysis||result.careerPath||'')+'</div>';
+  R+='</div>';
+  if(result.compatibleIndustries&&result.compatibleIndustries.length>0){
+    R+='<div class="section"><h3>适配行业领域</h3><div class="industry-tags">';
+    for(var ci=0;ci<result.compatibleIndustries.length;ci++){ R+='<span class="industry-tag">'+esc(result.compatibleIndustries[ci])+'</span>'; }
+    R+='</div></div>';
+  }
+  R+='<div class="section"><h2><span class="s-icon">🎯</span>推荐专业方向</h2>';
+  for(var mj2=0;mj2<result.majors.length;mj2++){ var m=result.majors[mj2]; var selTag=selectedMajors[m.name]?' ✓ 已选':''; R+='<div class="major-item"><div class="major-rank-num">'+m.rank+'</div><div class="major-info"><div class="major-name">'+esc(m.name)+selTag+'</div><div class="major-reason">'+esc(m.reason)+'</div></div><div class="major-score-bar"><div class="msb-track"><div class="msb-fill" style="width:'+m.score+'%"></div></div><div class="msb-text">适配度 '+m.score+'分</div></div></div>'; }
+  R+='</div>';
+  R+='</div>';
+
+  // ====== 第5页：人生规划 + 总结 ======
+  R+='<div class="page"><div class="stars">'+genStarsHtml(15)+'</div>';
+  R+='<div class="section"><h2><span class="s-icon">🛤️</span>人生发展规划建议</h2>';
+  R+='<div class="content-text">'+esc(llm.lifeGuidance||result.lifeGuidance||'')+'</div>';
+  R+='</div>';
+  R+='<div class="section"><h2><span class="s-icon">📚</span>学业规划建议</h2>';
+  R+='<div class="content-text">'+esc(result.studyAdvice||'')+'</div>';
+  R+='</div>';
+  R+='<div class="section"><h2><span class="s-icon">🧘</span>命理总结与周易智慧</h2>';
+  R+='<div class="content-text">'+esc(llm.fortuneWisdom||result.fortuneSummary||'')+'</div>';
+  R+='<div class="quote">天行健，君子以自强不息；地势坤，君子以厚德载物。——《周易》</div>';
+  R+='</div>';
+  R+='<div class="page-footer"><p>本报告由蜻蜓龙虾助手 · AI命理分析功能自动生成</p><p class="disclaimer">免责声明：本报告依据传统周易命理学理论生成，仅供娱乐参考，不构成人生决策建议。人生的精彩，在于自己的选择和努力。</p></div>';
+  R+='</div>';
+
+  R+='</body></html>';
+
+  // 在新窗口中打开并自动打印
+  var w=window.open('','_blank','width=900,height=700');
+  if(!w){ toast('⚠️ 请允许弹出窗口以生成报告'); return; }
+  w.document.write(R);
+  w.document.close();
+  // 等待渲染完成后触发打印
+  w.onload=function(){
+    setTimeout(function(){
+      w.print();
+      toast('📥 报告已打开，请选择「另存为PDF」保存');
+    },800);
+  };
+  // fallback: 如果onload不触发
+  setTimeout(function(){
+    try { w.print(); } catch(e) {}
+  },2000);
+}
+
+function genStarsCss(n){
+  var css='';
+  for(var i=0;i<n;i++){
+    var topPct=Math.floor(Math.random()*100);
+    var leftPct=Math.floor(Math.random()*100);
+    var delay=(Math.random()*2).toFixed(1);
+    var sz=Math.random()<0.3?'3px':'2px';
+    var op=(0.3+Math.random()*0.5).toFixed(2);
+    css+='.s'+i+'{top:'+topPct+'%;left:'+leftPct+'%;width:'+sz+';height:'+sz+';opacity:'+op+';animation:twinkle '+(2+Math.random()*3).toFixed(1)+'s '+delay+'s infinite}';
+  }
+  css+='@keyframes twinkle{0%,100%{opacity:0.2}50%{opacity:0.8}}';
+  return css;
+}
+
+function genStarsHtml(n){
+  var html='';
+  for(var i=0;i<n;i++){ html+='<div class="star-dot s'+i+'"></div>'; }
+  return html;
+}
+
+
 
 
 //]]>
